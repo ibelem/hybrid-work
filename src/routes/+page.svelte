@@ -35,7 +35,7 @@
 
 <style>
 	#logo {
-		width: 225px;
-		height: 47px;
+		width: 180px;
+		height: 40px;
 	}
 </style>
