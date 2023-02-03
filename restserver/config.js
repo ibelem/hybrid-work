@@ -4,6 +4,6 @@ module.exports = {
 	url: 'https://10.239.115.52:3000/',
 	httpPort: 8081,
 	httpsPort: 8082,
-	cert: './restserver/cert/gwo.crt',
-	certkey: './restserver/cert/gwo.key'
+	cert: './cert/gwo.crt',
+	certkey: './cert/gwo.key'
 };

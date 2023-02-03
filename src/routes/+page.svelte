@@ -74,14 +74,17 @@
 </script>
 
 <div>
-	<img id="logo" src="img/logo.svg" alt="Logo" />
+	<div>
+		<img id="logo" src="img/logo.svg" alt="Logo" />
+	</div>
 
-	<video width="720" height="480" id="video" bind:this={inputvideo}>
+	<video width="720" height="480" bind:this={inputvideo}>
 		<track kind="captions" />
 	</video>
-
-	<a href="_meet">meet page</a>
-
+	<div>
+		<a href="_meet">meet page</a>
+	</div>
+	<br />
 	<div>
 		{hour}:{min}:{sec}:{millisec}
 	</div>

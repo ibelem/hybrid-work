@@ -1,11 +1,15 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import mkcert from 'vite-plugin-mkcert';
+import fs from 'fs';
+import { cert, certkey } from './restserver/config';
 
 const config = {
 	server: {
-		https: true
+		https: {
+			cert: fs.readFileSync(cert),
+			key: fs.readFileSync(certkey)
+		}
 	},
-	plugins: [sveltekit(), mkcert()]
+	plugins: [sveltekit()]
 };
 
 export default config;
