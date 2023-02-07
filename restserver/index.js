@@ -7,9 +7,8 @@ const express = require('express');
 const fs = require('fs');
 const https = require('https');
 const app = express();
-
 const rest = require('./authrequest');
-const config = require('./config');
+const config = require('../config.json');
 
 // Directory 'public' for static files
 app.use(
@@ -94,8 +93,8 @@ prepareSampleRoom
 		// });
 
 		// Start HTTP server
-		app.listen(config.httpPort);
-		console.log(`Listening on HTTP port ${config.httpPort}`);
+		// app.listen(config.httpPort);
+		// console.log(`Listening on HTTP port ${config.httpPort}`);
 
 		// Start HTTPS server
 		try {
@@ -108,7 +107,7 @@ prepareSampleRoom
 					app
 				)
 				.listen(config.httpsPort);
-			console.log(`Listening on HTTPS port ${config.httpsPort}`);
+			console.log(`Rest Server Listening on HTTPS port ${config.httpsPort}`);
 		} catch (e) {
 			console.log(e);
 		}

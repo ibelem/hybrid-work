@@ -72,6 +72,10 @@
 			font-family: "Inter", sans-serif;
 			font-style: normal;
 		}
+
+		video {
+			aspect-ratio: 16 / 9;
+		}
 	</style>
 	%sveltekit.head%
 </head>
@@ -79,6 +83,7 @@
 <body data-sveltekit-preload-data="hover">
 	<div style="display: contents">%sveltekit.body%</div>
 	<script src="../js/owt.js"></script>
+	<script src="../js/socket.io.js"></script>
 	<script></script>
 </body>
 
