@@ -17,6 +17,7 @@
 	let error = null;
 
 	let inputVideo, outputCanvas;
+	let backgroundImageSource;
 	let meetContainer;
 	let column;
 	let resolution = { width: 1280, height: 720 };
@@ -60,7 +61,7 @@
 	$: sec = padNumber(date.getSeconds(), 2);
 	$: millisec = date.getMilliseconds().toString().substring(0, 2);
 
-	onMount(() => {
+	onMount(async () => {
 		if (browser) {
 			const interval = setInterval(() => {
 				date = new Date();
@@ -89,6 +90,36 @@
 
 				inputVideo.autoplay = true;
 				cl(inputVideo.srcObject);
+			};
+
+			let continueInputVideo = true;
+
+			const pipeline2 = buildWebGL2Pipeline(
+				inputVideo,
+				backgroundImageSource,
+				'none',
+				[321, 321],
+				outputCanvas,
+				null
+			);
+
+			const postProcessingConfig2 = {
+				smoothSegmentationMask: true,
+				jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
+				coverage: [0.5, 0.75],
+				lightWrapping: 0.3,
+				blendMode: 'screen'
+			};
+			pipeline2.updatePostProcessingConfig(postProcessingConfig2);
+
+			const videoCanvasOnFrame = async () => {
+				if (continueInputVideo) {
+					requestAnimationFrame(videoCanvasOnFrame);
+					// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
+					if (stream) {
+						await pipeline2.render();
+					}
+				}
 			};
 
 			const loadUserList = () => {
@@ -282,7 +313,14 @@
 			};
 
 			createOWTStream();
-			initConference();
+			continueInputVideo = true;
+
+			cl('---------------------------');
+			cl(outputCanvas);
+
+			await videoCanvasOnFrame();
+
+			// initConference();
 		}
 	});
 </script>
@@ -299,12 +337,7 @@
 	</div>
 
 	<div bind:this={meetContainer} class={column} id="meetContainer">
-		<div bind:this={outputCanvas} />
-		<div>2</div>
-		<div>3</div>
-		<div>4</div>
-		<div>5</div>
-		<div>1</div>
+		<div><canvas bind:this={outputCanvas} /></div>
 		<div>2</div>
 		<div>3</div>
 		<div>4</div>
@@ -320,6 +353,7 @@
 	<div>
 		{hour}:{min}:{sec}:{millisec}
 	</div>
+	<img bind:this={backgroundImageSource} src="../img/ssbg/01.jpg" alt="background" />
 	<div>{@html error}</div>
 </div>
 
@@ -353,7 +387,8 @@
 		width: 100%;
 		aspect-ratio: 16 / 9;
 	}
-	video {
+	video,
+	img {
 		width: 33.3%;
 		aspect-ratio: 16 / 9;
 	}

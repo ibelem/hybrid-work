@@ -4,14 +4,13 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const file = fileURLToPath(new URL('config.json', import.meta.url));
-const json = readFileSync(file, 'utf8');
-const pkg = JSON.parse(json);
+const json = JSON.parse(readFileSync(file, 'utf8'));
 
 const config = {
 	server: {
 		https: {
-			cert: fs.readFileSync(pkg.cert),
-			key: fs.readFileSync(pkg.certkey)
+			cert: fs.readFileSync(json.cert),
+			key: fs.readFileSync(json.certkey)
 		}
 	},
 	plugins: [sveltekit()]
