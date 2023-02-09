@@ -94,34 +94,6 @@
 
 			let continueInputVideo = true;
 
-			const pipeline2 = buildWebGL2Pipeline(
-				inputVideo,
-				backgroundImageSource,
-				'none',
-				[321, 321],
-				outputCanvas,
-				null
-			);
-
-			const postProcessingConfig2 = {
-				smoothSegmentationMask: true,
-				jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
-				coverage: [0.5, 0.75],
-				lightWrapping: 0.3,
-				blendMode: 'screen'
-			};
-			pipeline2.updatePostProcessingConfig(postProcessingConfig2);
-
-			const videoCanvasOnFrame = async () => {
-				if (continueInputVideo) {
-					requestAnimationFrame(videoCanvasOnFrame);
-					// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
-					if (stream) {
-						await pipeline2.render();
-					}
-				}
-			};
-
 			const loadUserList = () => {
 				for (let u of users) {
 					cl(u);
@@ -318,9 +290,7 @@
 			cl('---------------------------');
 			cl(outputCanvas);
 
-			await videoCanvasOnFrame();
-
-			// initConference();
+			initConference();
 		}
 	});
 </script>
