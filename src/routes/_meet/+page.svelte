@@ -11,14 +11,20 @@
 		pauseStream,
 		playStream
 	} from '../../lib/client/rest';
+
 	// import { Face } from 'kalidokit';
 	import { onMount } from 'svelte';
 	let date = new Date();
 	let error = null;
 
-	let inputVideo, outputCanvas;
-	let backgroundImageSource;
-	let meetContainer;
+	let camera, inputVideo, outputCanvas, ctx;
+	let cW, cH;
+	let br = false,
+		bb = false,
+		beauty = false,
+		ns = false;
+	let backgroundImageSource, backgroundPause;
+	let meetContainer, controlPanel;
 	let column;
 	let resolution = { width: 1280, height: 720 };
 	let avTrackConstraint = {
@@ -39,9 +45,15 @@
 		roomId,
 		myid,
 		localname = 'user';
+	let start, end, delta, inference;
 	let localPublication = null;
+	let localId = null;
 	let users = [];
-	let stream, processedstream, localStream;
+	let stream, processedStream, localStream;
+
+	let isPauseAudio = true;
+	let isPauseVideo = false;
+	let isAudioOnly = false;
 	let localScreen, localScreenId, localScreenPubliction;
 	let isScreenSharing = false;
 	let remoteScreen = null;
@@ -63,9 +75,9 @@
 
 	onMount(async () => {
 		if (browser) {
-			const interval = setInterval(() => {
-				date = new Date();
-			}, 1000);
+			// const interval = setInterval(() => {
+			// 	date = new Date();
+			// }, 1000);
 
 			let meetContainerChildCount = meetContainer.childElementCount;
 			meetContainerChildCount > 4
@@ -80,19 +92,117 @@
 			// 	blinkSettings: [0.25, 0.75] // adjust upper and lower bound blink sensitivity
 			// });
 
-			const createOWTStream = async () => {
-				stream = await Owt.Base.MediaStreamFactory.createMediaStream(avTrackConstraint);
-				if ('srcObject' in inputVideo) {
-					inputVideo.srcObject = stream;
-				} else {
-					inputVideo.src = URL.createObjectURL(stream);
-				}
+			// const createOWTStream = async () => {
+			// 	stream = await Owt.Base.MediaStreamFactory.createMediaStream(avTrackConstraint);
+			// 	if ('srcObject' in inputVideo) {
+			// 		inputVideo.srcObject = stream;
+			// 	} else {
+			// 		inputVideo.src = URL.createObjectURL(stream);
+			// 	}
 
-				inputVideo.autoplay = true;
-				cl(inputVideo.srcObject);
+			// 	inputVideo.autoplay = true;
+			// 	cl(inputVideo.srcObject);
+			// };
+
+			const mpfeatures = async () => {
+				await selfieSegmentation.send({ image: inputVideo });
 			};
 
-			let continueInputVideo = true;
+			const mediaPipeStream = () => {
+				camera = new Camera(inputVideo, {
+					onFrame: async () => {
+						await mpfeatures();
+					},
+					onSourceChanged: () => {
+						selfieSegmentation.reset();
+					},
+					width: resolution.width,
+					height: resolution.height
+				});
+			};
+
+			const onBRResults = (results) => {
+				cW = outputCanvas.width;
+				cH = outputCanvas.height;
+				if (isPauseVideo) {
+					ctx.drawImage(backgroundPause, 0, 0, cW, cH);
+				} else {
+					if (!bb && !br) {
+						cl('kkkkkkkkk');
+						ctx.drawImage(results.image, 0, 0, cW, cH);
+						if (beauty) {
+							ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(1px)';
+						} else {
+							ctx.filter = 'saturate(100%) brightness(100%) contrast(100%) blur(0px)';
+						}
+					} else {
+						end = performance.now();
+						if (start) {
+							delta = end - start;
+							inference.innerHTML = delta.toFixed(1);
+						}
+
+						fpsControl.tick();
+
+						ctx.save();
+						ctx.clearRect(0, 0, cW, cH);
+						ctx.drawImage(results.segmentationMask, 0, 0, cW, cH);
+
+						// Only overwrite existing pixels.
+						ctx.globalCompositeOperation = 'source-in';
+
+						if (beauty) {
+							ctx.filter = 'saturate(110%) brightness(150%) contrast(110%) blur(1px)';
+						}
+
+						ctx.drawImage(results.image, 0, 0, cW, cH);
+						ctx.globalCompositeOperation = 'destination-atop';
+
+						if (bb && br) {
+							ctx.filter = 'blur(10px)';
+							ctx.drawImage(bg, 0, 0, cW, cH);
+						} else if (bb) {
+							ctx.filter = 'blur(10px)';
+							ctx.drawImage(results.image, 0, 0, cW, cH);
+						} else if (br) {
+							ctx.drawImage(bg, 0, 0, cW, cH);
+						}
+
+						ctx.restore();
+						start = performance.now();
+					}
+				}
+			};
+
+			const selfieSegmentation = new SelfieSegmentation({
+				locateFile: (file) => {
+					cl(file);
+					cl(`../models/selfie_segmentation/${file}`);
+					return `../models/selfie_segmentation/${file}`;
+				}
+			});
+
+			selfieSegmentation.setOptions({
+				modelSelection: 1
+			});
+
+			selfieSegmentation.onResults(onBRResults);
+
+			const controls = window;
+			const fpsControl = new controls.FPS();
+			new controls.ControlPanel(controlPanel).add([fpsControl]);
+
+			const initMediaPipe = async () => {
+				bb = true;
+				mediaPipeStream();
+				ctx = outputCanvas.getContext('2d');
+				await camera.start();
+				getProcessedStream();
+
+				initConference();
+			};
+
+			initMediaPipe();
 
 			const loadUserList = () => {
 				for (let u of users) {
@@ -100,9 +210,15 @@
 				}
 			};
 
+			const getProcessedStream = () => {
+				processedStream = outputCanvas.captureStream();
+				//   const audiotrack = stream.getAudioTracks()[0];
+				//   processedStream.addTrack(audiotrack);
+			};
+
 			let createLocal = async () => {
 				localStream = new Owt.Base.LocalStream(
-					processedstream,
+					processedStream,
 					new Owt.Base.StreamSourceInfo('mic', 'camera')
 				);
 
@@ -112,11 +228,11 @@
 				cl('room.peerConnection');
 				cl(pc);
 
-				videotransceiver = pc.addTransceiver(processedstream.getVideoTracks()[0], {
+				videotransceiver = pc.addTransceiver(processedStream.getVideoTracks()[0], {
 					direction: 'sendonly',
 					streams: [stream]
 				});
-				audiotransceiver = pc.addTransceiver(processedstream.getAudioTracks()[0], {
+				audiotransceiver = pc.addTransceiver(processedStream.getAudioTracks()[0], {
 					direction: 'sendonly',
 					streams: [stream]
 				});
@@ -284,13 +400,7 @@
 				});
 			};
 
-			createOWTStream();
-			continueInputVideo = true;
-
-			cl('---------------------------');
-			cl(outputCanvas);
-
-			initConference();
+			// createOWTStream();
 		}
 	});
 </script>
@@ -323,7 +433,12 @@
 	<div>
 		{hour}:{min}:{sec}:{millisec}
 	</div>
+	<div bind:this={controlPanel} />
+	<div>
+		<span bind:this={inference} /> ms
+	</div>
 	<img bind:this={backgroundImageSource} src="../img/ssbg/01.jpg" alt="background" />
+	<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" />
 	<div>{@html error}</div>
 </div>
 
