@@ -35,6 +35,10 @@
 		<img id="logo" src="img/logo.svg" alt="Logo" />
 	</div>
 
+	<div id="signin">
+		<img src="https://avatars.githubusercontent.com/u/5017359?v=4" alt="a random avatar" />
+	</div>
+
 	<div>
 		<a href="_meet">meet page</a>
 	</div>
@@ -48,5 +52,21 @@
 	#logo {
 		width: 180px;
 		height: 40px;
+	}
+	#signin img {
+		--f: 1;
+		width: 50px;
+		aspect-ratio: 1;
+		padding-top: 0;
+		cursor: pointer;
+		border-radius: 999px 999px 999px 999px;
+		border-color: #c02942;
+		border-width: 2px;
+		border-style: solid;
+		transform: scale(var(--f));
+		transition: 0.5s;
+	}
+	#signin img:hover {
+		--f: 1.25;
 	}
 </style>
