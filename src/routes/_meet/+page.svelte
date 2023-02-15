@@ -1,5 +1,8 @@
 <script>
+	import Header from '../../lib/Header.svelte';
 	import { browser } from '$app/environment';
+	// import { Face } from 'kalidokit';
+	import { onMount } from 'svelte';
 	import {
 		send,
 		generateUrl,
@@ -10,20 +13,17 @@
 		getStreams,
 		pauseStream,
 		playStream
-	} from '../../lib/client/rest';
+	} from '../../js/client/rest';
 
-	// import { Face } from 'kalidokit';
-	import { onMount } from 'svelte';
-	let date = new Date();
 	let error = null;
 
 	let camera, inputVideo, outputCanvas, ctx;
 	let cW, cH;
-	let br = false,
-		bb = false,
-		beauty = false,
-		ns = false;
-	let backgroundImageSource, backgroundPause;
+	let br = false;
+	let bb = false;
+	let beauty = false;
+
+	let backgroundImage, backgroundPause;
 	let meetContainer, controlPanel;
 	let column;
 	let resolution = { width: 1280, height: 720 };
@@ -45,19 +45,35 @@
 		roomId,
 		myid,
 		localname = 'user';
-	let start, end, delta, inference;
+	let start,
+		end,
+		delta,
+		inference,
+		inferencedata = 0;
 	let localPublication = null;
 	let localId = null;
 	let users = [];
 	let stream, processedStream, localStream;
 
-	let isPauseAudio = true;
-	let isPauseVideo = false;
-	let isAudioOnly = false;
+	let pauseAudio = true;
+	let pauseVideo = false;
+	let audioOnly = false;
 	let localScreen, localScreenId, localScreenPubliction;
-	let isScreenSharing = false;
+	let screenSharing = false;
 	let remoteScreen = null;
 	let remoteScreenName = null;
+
+	const changeBb = (e) => {
+		bb = e.currentTarget.value;
+	};
+
+	const changeBr = (e) => {
+		br = e.currentTarget.value;
+	};
+
+	const changeBeauty = (e) => {
+		beauty = e.currentTarget.value;
+	};
 
 	const padNumber = (num, fill) => {
 		var len = ('' + num).length;
@@ -68,17 +84,8 @@
 		console.log(msg);
 	};
 
-	$: hour = padNumber(date.getHours(), 2);
-	$: min = padNumber(date.getMinutes(), 2);
-	$: sec = padNumber(date.getSeconds(), 2);
-	$: millisec = date.getMilliseconds().toString().substring(0, 2);
-
 	onMount(async () => {
 		if (browser) {
-			// const interval = setInterval(() => {
-			// 	date = new Date();
-			// }, 1000);
-
 			let meetContainerChildCount = meetContainer.childElementCount;
 			meetContainerChildCount > 4
 				? (column = 'grid5')
@@ -104,17 +111,13 @@
 			// 	cl(inputVideo.srcObject);
 			// };
 
-			const mpfeatures = async () => {
-				await selfieSegmentation.send({ image: inputVideo });
-			};
-
 			const mediaPipeStream = () => {
 				camera = new Camera(inputVideo, {
 					onFrame: async () => {
-						await mpfeatures();
+						await selfieSegmentation.send({ image: inputVideo });
 					},
-					onSourceChanged: () => {
-						selfieSegmentation.reset();
+					onSourceChanged: async () => {
+						await selfieSegmentation.reset();
 					},
 					width: resolution.width,
 					height: resolution.height
@@ -124,11 +127,12 @@
 			const onBRResults = (results) => {
 				cW = outputCanvas.width;
 				cH = outputCanvas.height;
-				if (isPauseVideo) {
+				cl(bb + ' ' + br);
+				if (pauseVideo) {
 					ctx.drawImage(backgroundPause, 0, 0, cW, cH);
 				} else {
 					if (!bb && !br) {
-						cl('kkkkkkkkk');
+						cl('---------------');
 						ctx.drawImage(results.image, 0, 0, cW, cH);
 						if (beauty) {
 							ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(1px)';
@@ -136,10 +140,11 @@
 							ctx.filter = 'saturate(100%) brightness(100%) contrast(100%) blur(0px)';
 						}
 					} else {
+						cl('+++++++++++++++++++');
 						end = performance.now();
 						if (start) {
 							delta = end - start;
-							inference.innerHTML = delta.toFixed(1);
+							inferencedata = delta.toFixed(1);
 						}
 
 						fpsControl.tick();
@@ -160,14 +165,14 @@
 
 						if (bb && br) {
 							ctx.filter = 'blur(10px)';
-							ctx.drawImage(bg, 0, 0, cW, cH);
+							ctx.drawImage(backgroundImage, 0, 0, cW, cH);
 						} else if (bb) {
 							ctx.filter = 'blur(10px)';
 							ctx.drawImage(results.image, 0, 0, cW, cH);
 						} else if (br) {
-							ctx.drawImage(bg, 0, 0, cW, cH);
+							ctx.filter = 'blur(0px)';
+							ctx.drawImage(backgroundImage, 0, 0, cW, cH);
 						}
-
 						ctx.restore();
 						start = performance.now();
 					}
@@ -183,7 +188,7 @@
 			});
 
 			selfieSegmentation.setOptions({
-				modelSelection: 1
+				modelSelection: 0
 			});
 
 			selfieSegmentation.onResults(onBRResults);
@@ -193,7 +198,6 @@
 			new controls.ControlPanel(controlPanel).add([fpsControl]);
 
 			const initMediaPipe = async () => {
-				bb = true;
 				mediaPipeStream();
 				ctx = outputCanvas.getContext('2d');
 				await camera.start();
@@ -246,9 +250,9 @@
 				let publication = await room.publish(localStream, [videotransceiver, audiotransceiver]);
 				localPublication = publication;
 
-				isPauseAudio = false;
+				pauseAudio = false;
 				toggleAudio();
-				isPauseVideo = true;
+				pauseVideo = true;
 				toggleVideo();
 
 				mixStream(roomId, localPublication.id, 'common');
@@ -406,9 +410,7 @@
 </script>
 
 <div>
-	<div>
-		<img id="logo" src="img/logo.svg" alt="Logo" />
-	</div>
+	<Header />
 
 	<div>
 		<video bind:this={inputVideo}>
@@ -422,31 +424,59 @@
 		<div>3</div>
 		<div>4</div>
 		<div>5</div>
-		<div>1</div>
-		<div>2</div>
-		<div>3</div>
-		<div>4</div>
-		<div>5</div>
 	</div>
 
-	<br />
-	<div>
-		{hour}:{min}:{sec}:{millisec}
-	</div>
 	<div bind:this={controlPanel} />
+
+	Background Blur
+	<label>
+		<input on:change={changeBb} type="radio" group={bb} name="bb" value={true} />
+		ON
+	</label>
+
+	<label>
+		<input on:change={changeBb} type="radio" group={bb} name="bb" value={false} checked />
+		OFF
+	</label>
+
+	Background Replacement
+	<label>
+		<input on:change={changeBr} type="radio" group={br} name="br" value={true} />
+		ON
+	</label>
+
+	<label>
+		<input on:change={changeBr} type="radio" group={br} name="br" value={false} checked />
+		OFF
+	</label>
+
+	beauty
+	<label>
+		<input on:change={changeBeauty} type="radio" group={beauty} name="beauty" value={true} />
+		ON
+	</label>
+
+	<label>
+		<input
+			on:change={changeBeauty}
+			type="radio"
+			group={beauty}
+			name="beauty"
+			value={false}
+			checked
+		/>
+		OFF
+	</label>
+
 	<div>
-		<span bind:this={inference} /> ms
+		<span bind:this={inference}>{inferencedata}</span> ms
 	</div>
-	<img bind:this={backgroundImageSource} src="../img/ssbg/01.jpg" alt="background" />
+	<img bind:this={backgroundImage} src="../img/ssbg/01.jpg" alt="background" />
 	<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" />
 	<div>{@html error}</div>
 </div>
 
 <style>
-	#logo {
-		width: 180px;
-		height: 40px;
-	}
 	#meetContainer {
 		display: grid;
 		align-items: center;
