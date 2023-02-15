@@ -51,7 +51,7 @@
 			{d}
 		</div>
 		<div class="signin">
-			<img src="https://avatars.githubusercontent.com/u/5017359?v=4" alt="a random avatar" />
+			<img src="" alt="a random avatar" />
 		</div>
 	</div>
 </header>
@@ -71,6 +71,7 @@
 		align-items: center;
 		display: flex;
 	}
+
 	.logo {
 		justify-self: left;
 	}
@@ -95,5 +96,16 @@
 	}
 	.signin img:hover {
 		--f: 1.25;
+	}
+
+	@media (max-width: 576px) {
+		header {
+			display: grid;
+			grid-template-rows: repeat(2, 1fr);
+			grid-template-columns: 1fr;
+		}
+		.signin {
+			justify-self: center;
+		}
 	}
 </style>
