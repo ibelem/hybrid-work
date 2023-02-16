@@ -412,9 +412,7 @@
 </script>
 
 <div class="meet">
-	<Header />
-
-	{@html data.nickname}
+	<Header nickname={data.nickname} />
 
 	<div class="container">
 		<div>

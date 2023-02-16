@@ -2,6 +2,8 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import logo from '$lib/assets/logo.svg';
+	import account from '$lib/assets/account.svg';
+	export let nickname;
 	let date = new Date();
 
 	let padNumber = (num, fill) => {
@@ -39,6 +41,9 @@
 				date = new Date();
 			}, 60);
 		}
+		if (!nickname) {
+			nickname = '';
+		}
 	});
 </script>
 
@@ -52,7 +57,8 @@
 			{d}
 		</div>
 		<div class="signin">
-			<img src="" alt="a random avatar" />
+			{#if nickname}<span>{nickname}</span>{/if}
+			<img src={account} alt={nickname} />
 		</div>
 	</div>
 </header>
@@ -83,6 +89,11 @@
 	.signin {
 		margin-left: 8px;
 		justify-self: right;
+		display: flex;
+		align-items: center;
+	}
+	.signin span {
+		margin-right: 8px;
 	}
 	.signin img {
 		--f: 1;
