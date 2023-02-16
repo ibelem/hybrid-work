@@ -12,9 +12,6 @@ Gathering with Others​ to connect, share, collaborate, and manage your work an
 ```bash
 npm install
 npm run dev
-
-# open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
