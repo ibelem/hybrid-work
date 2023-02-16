@@ -1,6 +1,7 @@
 <script>
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
+	import logo from '$lib/assets/logo.svg';
 	let date = new Date();
 
 	let padNumber = (num, fill) => {
@@ -36,14 +37,14 @@
 		if (browser) {
 			const interval = setInterval(() => {
 				date = new Date();
-			}, 1);
+			}, 60);
 		}
 	});
 </script>
 
 <header>
 	<div class="logo">
-		<a href="../"><img id="logo" src="img/logo.svg" alt="Logo" /></a>
+		<a href="../"><img id="logo" src={logo} alt="Logo" /></a>
 	</div>
 	<div class="info">
 		<div class="time">

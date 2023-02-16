@@ -1,7 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
 	import Header from '../lib/Header.svelte';
+	import bannerImage from '$lib/assets/bannerimage.png';
 
+	let nickname;
+	let join = () => {
+		if (nickname) {
+			location.href = `../_gathering/${nickname}`;
+		} else {
+			location.href = `../_gathering/Anonymous`;
+		}
+	};
 	onMount(() => {
 		// Face.solve(facelandmarkArray, {
 		// 	runtime: 'tfjs', // `mediapipe` or `tfjs`
@@ -20,30 +29,28 @@
 			<h2>Gathering with Others</h2>
 			<div class="desc">
 				Connect, collaborate, and manage your work and life on the Web, powered by emerging Web APIs
-				including WebGPU and WebNN API.
+				including WebGPU and WebNN API. https://ishadeed.com/article/responsive-design/
 			</div>
-			<div class="input-group">
+			<form on:submit|preventDefault={() => join} class="input-group">
 				<input
 					type="text"
 					class="input"
-					id="nickname"
-					name="nickname"
+					bind:value={nickname}
 					placeholder="Enter a nickname"
 					autocomplete="off"
 				/>
-				<div class="button--submit">
+				<button class="button--submit" href="." on:click={join}>
 					Join
-					<svg xmlns="http://www.w3.org/2000/svg" height="48" width="48"
+					<svg height="48" width="48"
 						><path
 							d="M24.45 42v-3H39V9H24.45V6H39q1.2 0 2.1.9.9.9.9 2.1v30q0 1.2-.9 2.1-.9.9-2.1.9Zm-3.9-9.25L18.4 30.6l5.1-5.1H6v-3h17.4l-5.1-5.1 2.15-2.15 8.8 8.8Z"
 						/></svg
 					>
-				</div>
-			</div>
-			<a href="_meet">meet page</a>
+				</button>
+			</form>
 		</div>
 		<div class="right">
-			<img src="../img/home.png" alt="gathering with others" />
+			<img src={bannerImage} alt="gathering with others" />
 		</div>
 	</main>
 </div>
@@ -126,6 +133,7 @@
 	}
 
 	.input:focus,
+	.input:hover,
 	.input:focus-visible {
 		border-color: #3e3dad;
 		outline: none;

@@ -1,8 +1,10 @@
 <script>
-	import Header from '../../lib/Header.svelte';
 	import { browser } from '$app/environment';
+	import Header from '../../../lib/Header.svelte';
 	// import { Face } from 'kalidokit';
 	import { onMount } from 'svelte';
+	/** @type {import('./$types').PageData} */
+	export let data;
 	import {
 		send,
 		generateUrl,
@@ -13,7 +15,7 @@
 		getStreams,
 		pauseStream,
 		playStream
-	} from '../../js/client/rest';
+	} from '../../../js/client/rest';
 
 	let error = null;
 
@@ -409,74 +411,85 @@
 	});
 </script>
 
-<div>
+<div class="meet">
 	<Header />
 
-	<div>
-		<video bind:this={inputVideo}>
-			<track kind="captions" />
-		</video>
+	{@html data.nickname}
+
+	<div class="container">
+		<div>
+			<video bind:this={inputVideo}>
+				<track kind="captions" />
+			</video>
+		</div>
+
+		<div bind:this={meetContainer} class={column} id="meetContainer">
+			<div><canvas bind:this={outputCanvas} /></div>
+			<div>2</div>
+			<div>3</div>
+			<div>4</div>
+			<div>5</div>
+		</div>
+
+		<div bind:this={controlPanel} />
+
+		Background Blur
+		<label>
+			<input on:change={changeBb} type="radio" group={bb} name="bb" value={true} />
+			ON
+		</label>
+
+		<label>
+			<input on:change={changeBb} type="radio" group={bb} name="bb" value={false} checked />
+			OFF
+		</label>
+
+		Background Replacement
+		<label>
+			<input on:change={changeBr} type="radio" group={br} name="br" value={true} />
+			ON
+		</label>
+
+		<label>
+			<input on:change={changeBr} type="radio" group={br} name="br" value={false} checked />
+			OFF
+		</label>
+
+		beauty
+		<label>
+			<input on:change={changeBeauty} type="radio" group={beauty} name="beauty" value={true} />
+			ON
+		</label>
+
+		<label>
+			<input
+				on:change={changeBeauty}
+				type="radio"
+				group={beauty}
+				name="beauty"
+				value={false}
+				checked
+			/>
+			OFF
+		</label>
+
+		<div>
+			<span bind:this={inference}>{inferencedata}</span> ms
+		</div>
+		<img bind:this={backgroundImage} src="../img/ssbg/01.jpg" alt="background" />
+		<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" />
+		<div>{@html error}</div>
 	</div>
-
-	<div bind:this={meetContainer} class={column} id="meetContainer">
-		<div><canvas bind:this={outputCanvas} /></div>
-		<div>2</div>
-		<div>3</div>
-		<div>4</div>
-		<div>5</div>
-	</div>
-
-	<div bind:this={controlPanel} />
-
-	Background Blur
-	<label>
-		<input on:change={changeBb} type="radio" group={bb} name="bb" value={true} />
-		ON
-	</label>
-
-	<label>
-		<input on:change={changeBb} type="radio" group={bb} name="bb" value={false} checked />
-		OFF
-	</label>
-
-	Background Replacement
-	<label>
-		<input on:change={changeBr} type="radio" group={br} name="br" value={true} />
-		ON
-	</label>
-
-	<label>
-		<input on:change={changeBr} type="radio" group={br} name="br" value={false} checked />
-		OFF
-	</label>
-
-	beauty
-	<label>
-		<input on:change={changeBeauty} type="radio" group={beauty} name="beauty" value={true} />
-		ON
-	</label>
-
-	<label>
-		<input
-			on:change={changeBeauty}
-			type="radio"
-			group={beauty}
-			name="beauty"
-			value={false}
-			checked
-		/>
-		OFF
-	</label>
-
-	<div>
-		<span bind:this={inference}>{inferencedata}</span> ms
-	</div>
-	<img bind:this={backgroundImage} src="../img/ssbg/01.jpg" alt="background" />
-	<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" />
-	<div>{@html error}</div>
 </div>
 
 <style>
+	.container {
+		margin: 0 auto;
+	}
+
+	.meet {
+		padding: 8px 24px;
+	}
 	#meetContainer {
 		display: grid;
 		align-items: center;
