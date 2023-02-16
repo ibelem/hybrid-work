@@ -2,9 +2,12 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import logo from '$lib/assets/logo.svg';
+	import logoWhite from '$lib/assets/logo_white.svg';
 	import account from '$lib/assets/account.svg';
+	import accountWhite from '$lib/assets/account_white.svg';
 	export let nickname;
 	let date = new Date();
+	let path, logoImage, accountImage;
 
 	let padNumber = (num, fill) => {
 		var len = ('' + num).length;
@@ -44,21 +47,25 @@
 		if (!nickname) {
 			nickname = '';
 		}
+
+		path = new URL(window.location).pathname.indexOf('/_gathering/');
+		path > -1 ? (logoImage = logoWhite) : (logoImage = logo);
+		path > -1 ? (accountImage = accountWhite) : (accountImage = account);
 	});
 </script>
 
 <header>
 	<div class="logo">
-		<a href="../"><img id="logo" src={logo} alt="Logo" /></a>
+		<a href="../"><img id="logo" src={logoImage} alt="Logo" /></a>
 	</div>
 	<div class="info">
 		<div class="time">
-			{hour}:{min}:{sec} • {day}, {m}
+			{hour}:{min}:{sec} · {day}, {m}
 			{d}
 		</div>
 		<div class="signin">
 			{#if nickname}<span>{nickname}</span>{/if}
-			<img src={account} alt={nickname} />
+			<img src={accountImage} alt={nickname} />
 		</div>
 	</div>
 </header>
@@ -116,7 +123,8 @@
 			grid-template-rows: repeat(2, 1fr);
 			grid-template-columns: 1fr;
 		}
-		.signin {
+		.signin,
+		.info {
 			justify-self: center;
 		}
 	}

@@ -1,6 +1,7 @@
 <script>
 	import { browser } from '$app/environment';
 	import Header from '../../../lib/Header.svelte';
+	import Control from '../../../lib/Control.svelte';
 	// import { Face } from 'kalidokit';
 	import { onMount } from 'svelte';
 	/** @type {import('./$types').PageData} */
@@ -23,10 +24,12 @@
 	let cW, cH;
 	let br = false;
 	let bb = false;
+	let pauseAudio = true;
+	let pauseVideo = false;
 	let beauty = false;
 
 	let backgroundImage, backgroundPause;
-	let meetContainer, controlPanel;
+	let gatheringContainer, controlPanel;
 	let column;
 	let resolution = { width: 1280, height: 720 };
 	let avTrackConstraint = {
@@ -56,42 +59,26 @@
 	let localId = null;
 	let users = [];
 	let stream, processedStream, localStream;
-
-	let pauseAudio = true;
-	let pauseVideo = false;
 	let audioOnly = false;
 	let localScreen, localScreenId, localScreenPubliction;
 	let screenSharing = false;
 	let remoteScreen = null;
 	let remoteScreenName = null;
 
-	const changeBb = (e) => {
-		bb = e.currentTarget.value;
-	};
-
-	const changeBr = (e) => {
-		br = e.currentTarget.value;
-	};
-
-	const changeBeauty = (e) => {
-		beauty = e.currentTarget.value;
-	};
-
-	const padNumber = (num, fill) => {
-		var len = ('' + num).length;
-		return Array(fill > len ? fill - len + 1 || 0 : 0).join(0) + num;
-	};
-
 	const cl = (msg) => {
 		console.log(msg);
 	};
 
+	const toggleBeauty = () => {
+		beauty = !beauty;
+	};
+
 	onMount(async () => {
 		if (browser) {
-			let meetContainerChildCount = meetContainer.childElementCount;
-			meetContainerChildCount > 4
+			let gatheringContainerChildCount = gatheringContainer.childElementCount;
+			gatheringContainerChildCount > 4
 				? (column = 'grid5')
-				: (column = 'grid' + meetContainer.childElementCount);
+				: (column = 'grid' + gatheringContainer.childElementCount);
 
 			// Face.solve(facelandmarkArray, {
 			// 	runtime: 'tfjs', // `mediapipe` or `tfjs`
@@ -129,12 +116,12 @@
 			const onBRResults = (results) => {
 				cW = outputCanvas.width;
 				cH = outputCanvas.height;
-				cl(bb + ' ' + br);
+				cl('-=====================');
+				cl(beauty);
 				if (pauseVideo) {
 					ctx.drawImage(backgroundPause, 0, 0, cW, cH);
 				} else {
 					if (!bb && !br) {
-						cl('---------------');
 						ctx.drawImage(results.image, 0, 0, cW, cH);
 						if (beauty) {
 							ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(1px)';
@@ -142,7 +129,6 @@
 							ctx.filter = 'saturate(100%) brightness(100%) contrast(100%) blur(0px)';
 						}
 					} else {
-						cl('+++++++++++++++++++');
 						end = performance.now();
 						if (start) {
 							delta = end - start;
@@ -159,7 +145,7 @@
 						ctx.globalCompositeOperation = 'source-in';
 
 						if (beauty) {
-							ctx.filter = 'saturate(110%) brightness(150%) contrast(110%) blur(1px)';
+							ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(0px)';
 						}
 
 						ctx.drawImage(results.image, 0, 0, cW, cH);
@@ -411,17 +397,15 @@
 	});
 </script>
 
-<div class="meet">
+<div class="gathering">
 	<Header nickname={data.nickname} />
 
 	<div class="container">
-		<div>
-			<video bind:this={inputVideo}>
-				<track kind="captions" />
-			</video>
-		</div>
+		<video bind:this={inputVideo}>
+			<track kind="captions" />
+		</video>
 
-		<div bind:this={meetContainer} class={column} id="meetContainer">
+		<div bind:this={gatheringContainer} class={column} id="gatheringContainer">
 			<div><canvas bind:this={outputCanvas} /></div>
 			<div>2</div>
 			<div>3</div>
@@ -429,48 +413,12 @@
 			<div>5</div>
 		</div>
 
+		COMPUTE PRESSURE
+
 		<div bind:this={controlPanel} />
 
-		Background Blur
-		<label>
-			<input on:change={changeBb} type="radio" group={bb} name="bb" value={true} />
-			ON
-		</label>
-
-		<label>
-			<input on:change={changeBb} type="radio" group={bb} name="bb" value={false} checked />
-			OFF
-		</label>
-
-		Background Replacement
-		<label>
-			<input on:change={changeBr} type="radio" group={br} name="br" value={true} />
-			ON
-		</label>
-
-		<label>
-			<input on:change={changeBr} type="radio" group={br} name="br" value={false} checked />
-			OFF
-		</label>
-
-		beauty
-		<label>
-			<input on:change={changeBeauty} type="radio" group={beauty} name="beauty" value={true} />
-			ON
-		</label>
-
-		<label>
-			<input
-				on:change={changeBeauty}
-				type="radio"
-				group={beauty}
-				name="beauty"
-				value={false}
-				checked
-			/>
-			OFF
-		</label>
-
+		<Control bind:bb bind:br bind:au={pauseAudio} bind:vi={pauseVideo} />
+		<button id="beauty" type="button" on:click={toggleBeauty}>Beauty</button>
 		<div>
 			<span bind:this={inference}>{inferencedata}</span> ms
 		</div>
@@ -481,41 +429,131 @@
 </div>
 
 <style>
+	.gathering {
+		min-height: calc(100vh - 16px);
+		padding: 8px 24px;
+		background-color: rgba(32, 33, 36, 1);
+		color: rgba(255, 255, 255, 1);
+	}
+
 	.container {
 		margin: 0 auto;
 	}
 
-	.meet {
-		padding: 8px 24px;
+	.container video {
+		display: none;
 	}
-	#meetContainer {
+
+	#gatheringContainer canvas {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+	}
+
+	video,
+	img {
+		width: 10%;
+		aspect-ratio: 16 / 9;
+	}
+
+	#beauty {
+		border: 0;
+		background: transparent;
+		color: rgba(255, 255, 255, 1);
+		border: 1px solid rgba(255, 255, 0, 1);
+		padding: 0.4rem 2rem;
+		cursor: pointer;
+	}
+
+	#gatheringContainer {
 		display: grid;
 		align-items: center;
 		justify-items: center;
 		grid-gap: 10px;
 	}
+
 	.grid1 {
 		grid-template-columns: 1fr;
 	}
+
 	.grid2 {
 		grid-template-columns: repeat(2, 1fr);
 	}
+
 	.grid3 {
 		grid-template-columns: repeat(3, 1fr);
 	}
+
 	.grid4 {
 		grid-template-columns: repeat(4, 1fr);
 	}
+
 	.grid5 {
 		grid-template-columns: repeat(5, 1fr);
 	}
-	#meetContainer canvas {
-		width: 100%;
-		aspect-ratio: 16 / 9;
+
+	@media (max-width: 575px) {
+		.container {
+			max-width: 540px;
+		}
+		.grid1,
+		.grid2,
+		.grid3,
+		.grid4,
+		.grid5 {
+			grid-template-columns: 1fr;
+		}
 	}
-	video,
-	img {
-		width: 33.3%;
-		aspect-ratio: 16 / 9;
+
+	@media (min-width: 576px) {
+		.container {
+			max-width: 540px;
+		}
+
+		.grid1,
+		.grid2,
+		.grid3,
+		.grid4,
+		.grid5 {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 768px) {
+		.container {
+			max-width: 720px;
+		}
+		.grid1,
+		.grid2,
+		.grid3,
+		.grid4,
+		.grid5 {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	@media (min-width: 992px) {
+		.container {
+			max-width: 960px;
+		}
+		.grid1,
+		.grid2,
+		.grid3,
+		.grid4,
+		.grid5 {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	@media (min-width: 1200px) {
+		.container {
+			max-width: 100%;
+		}
+		.grid1,
+		.grid2,
+		.grid3,
+		.grid4,
+		.grid5 {
+			grid-template-columns: repeat(5, 1fr);
+		}
 	}
 </style>

@@ -29,7 +29,7 @@
 			<h2>Gathering with Others</h2>
 			<div class="desc">
 				Connect, collaborate, and manage your work and life on the Web, powered by emerging Web APIs
-				including WebGPU and WebNN API. https://ishadeed.com/article/responsive-design/
+				including WebGPU and WebNN API.
 			</div>
 			<form on:submit|preventDefault={() => join} class="input-group">
 				<input
@@ -70,7 +70,7 @@
 		align-items: center;
 		justify-items: center;
 		grid-column-gap: 2rem;
-		height: calc(100vh - 120px);
+		height: calc(100vh - 140px);
 		padding: 0 2rem;
 	}
 	.intro {
@@ -99,10 +99,20 @@
 		border: 1px solid #5e4dcd;
 		border-radius: 6px 0 0 6px;
 		background-color: transparent;
+		font-size: 0.9rem;
+	}
+
+	::placeholder {
+		color: rgba(0, 0, 0, 0.4);
+	}
+
+	.input:focus::placeholder {
+		color: rgba(0, 0, 0, 0);
 	}
 
 	.button--submit {
 		height: 37px;
+		font-size: 1rem;
 		padding: 0 1rem;
 		border: none;
 		border-radius: 0 6px 6px 0;
