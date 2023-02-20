@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import Header from '../../../lib/Header.svelte';
 	import Control from '../../../lib/Control.svelte';
+	import Meter from '../../../lib/Meter.svelte';
 	// import { Face } from 'kalidokit';
 	import { onMount } from 'svelte';
 	/** @type {import('./$types').PageData} */
@@ -19,6 +20,10 @@
 	} from '../../../js/client/rest';
 
 	let error = null;
+	let cpTitle = 'Start',
+		cpState = '',
+		cpTime = '',
+		observer;
 
 	let camera, inputVideo, outputCanvas, ctx;
 	let cW, cH;
@@ -67,6 +72,34 @@
 
 	const cl = (msg) => {
 		console.log(msg);
+	};
+
+	const initCP = async () => {
+		if (browser) {
+			if ('PressureObserver' in window) {
+				const pressureObserverCallback = (updates) => {
+					cpState = updates[0].state;
+					cpTime = updates[0].time;
+				};
+				observer = new PressureObserver(pressureObserverCallback, { sampleRate: 1 });
+			} else {
+				cpState = 'Computer Pressure is not available in your browser';
+			}
+		}
+	};
+
+	initCP();
+
+	const toggleCP = async () => {
+		if (cpTitle === 'Start') {
+			cpTitle = 'Stop';
+			await observer.observe('cpu');
+		} else {
+			cpTitle = 'Start';
+			await observer.unobserve('cpu');
+			// cpState = '';
+			// cpTime = '';
+		}
 	};
 
 	const toggleBeauty = () => {
@@ -413,7 +446,12 @@
 			<div>5</div>
 		</div>
 
-		COMPUTE PRESSURE
+		<div>
+			<button type="button" on:click={toggleCP}>{cpTitle}</button>
+			<div>{cpState}</div>
+			<div>{cpTime}</div>
+			<Meter />
+		</div>
 
 		<div bind:this={controlPanel} />
 
@@ -422,8 +460,13 @@
 		<div>
 			<span bind:this={inference}>{inferencedata}</span> ms
 		</div>
-		<img bind:this={backgroundImage} src="../img/ssbg/01.jpg" alt="background" />
-		<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" />
+		<img
+			bind:this={backgroundImage}
+			src="../img/ssbg/01.jpg"
+			alt="background"
+			style="display:none"
+		/>
+		<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" style="display:none" />
 		<div>{@html error}</div>
 	</div>
 </div>
@@ -455,12 +498,13 @@
 		aspect-ratio: 16 / 9;
 	}
 
-	#beauty {
+	button {
 		border: 0;
 		background: transparent;
 		color: rgba(255, 255, 255, 1);
 		border: 1px solid rgba(255, 255, 0, 1);
-		padding: 0.4rem 2rem;
+		padding: 0.2rem 2rem;
+		margin: 0.2rem;
 		cursor: pointer;
 	}
 
