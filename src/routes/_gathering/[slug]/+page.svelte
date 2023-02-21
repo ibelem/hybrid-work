@@ -20,10 +20,6 @@
 	} from '../../../js/client/rest';
 
 	let error = null;
-	let cpTitle = 'Start',
-		cpState = '',
-		cpTime = '',
-		observer;
 
 	let camera, inputVideo, outputCanvas, ctx;
 	let cW, cH;
@@ -72,34 +68,6 @@
 
 	const cl = (msg) => {
 		console.log(msg);
-	};
-
-	const initCP = async () => {
-		if (browser) {
-			if ('PressureObserver' in window) {
-				const pressureObserverCallback = (updates) => {
-					cpState = updates[0].state;
-					cpTime = updates[0].time;
-				};
-				observer = new PressureObserver(pressureObserverCallback, { sampleRate: 1 });
-			} else {
-				cpState = 'Computer Pressure is not available in your browser';
-			}
-		}
-	};
-
-	initCP();
-
-	const toggleCP = async () => {
-		if (cpTitle === 'Start') {
-			cpTitle = 'Stop';
-			await observer.observe('cpu');
-		} else {
-			cpTitle = 'Start';
-			await observer.unobserve('cpu');
-			// cpState = '';
-			// cpTime = '';
-		}
 	};
 
 	const toggleBeauty = () => {
@@ -447,9 +415,6 @@
 		</div>
 
 		<div>
-			<button type="button" on:click={toggleCP}>{cpTitle}</button>
-			<div>{cpState}</div>
-			<div>{cpTime}</div>
 			<Meter />
 		</div>
 

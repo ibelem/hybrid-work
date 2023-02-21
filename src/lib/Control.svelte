@@ -173,7 +173,7 @@
 	.control {
 		margin: 1rem auto;
 		position: fixed;
-		bottom: 6rem;
+		bottom: 2rem;
 		left: 50%;
 		transform: translateX(-50%);
 	}
