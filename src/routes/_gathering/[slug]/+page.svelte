@@ -1,6 +1,6 @@
 <script>
 	import { browser } from '$app/environment';
-	import Header from '../../../lib/Header.svelte';
+	import Header from '../../../lib/HeaderWhite.svelte';
 	import Control from '../../../lib/Control.svelte';
 	import Meter from '../../../lib/Meter.svelte';
 	// import { Face } from 'kalidokit';
