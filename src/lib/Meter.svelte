@@ -36,8 +36,8 @@
 </script>
 
 <!-- <button type="button" on:click={toggleCP}>{cpTitle}</button> -->
-<div class="computepressure">
-	<div class={cpState}>
+<div class="computepressure ichild">
+	<div class="first {cpState}">
 		{#if cpState == 'nominal'}
 			<svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 96 960 960" width="48"
 				><path
@@ -69,64 +69,60 @@
 
 <style>
 	.computepressure {
-		display: inline-block;
-		align-items: center;
-		position: fixed;
-		bottom: 120px;
-		left: 24px;
-		text-transform: uppercase;
-	}
-	.computepressure div {
-		border: 1px solid rgba(255, 255, 255, 0.1);
 		width: 136px;
+		margin-right: 4px;
 	}
 
-	.computepressure div:last-child {
-		border: 0;
-		font-size: 10px;
-		padding: 6px;
-	}
-
-	.computepressure div:first-child {
-		font-size: 15px;
-		padding: 6px;
+	.computepressure .first {
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		font-size: 24px;
+		padding: 6px 0 8px 0;
 		align-items: center;
-		display: flex;
 		justify-content: center;
+		background: rgba(0, 0, 0, 0.05);
+		color: rgba(255, 255, 255, 0.9);
+		letter-spacing: 0px;
+		align-content: center;
+		display: flex;
 	}
 
-	.computepressure svg {
-		width: 18px;
-		height: 18px;
+	.computepressure .title {
+		border: 0;
+		font-size: 10px !important;
+		padding: 6px;
+	}
+
+	.computepressure .first:hover {
+		background: rgba(0, 255, 255, 0.05);
+		color: rgba(0, 255, 255, 1);
+		border: 1px solid rgba(0, 255, 255, 0.2);
+		cursor: pointer;
+	}
+
+	.computepressure .first svg {
 		margin-right: 2px;
 	}
 
-	.computepressure svg path {
-		fill: rgba(255, 255, 255, 0.8);
-	}
-	.nominal {
-		background: linear-gradient(to right bottom, rgba(0, 128, 32, 0.1), rgba(0, 128, 32, 0.8));
-	}
-	.nominal:hover {
-		background: linear-gradient(to right bottom, rgba(0, 128, 32, 0.5), rgba(0, 128, 32, 1));
+	.computepressure .first svg path {
+		fill: rgba(255, 255, 255, 0.9);
 	}
 
-	.fair {
-		background: linear-gradient(to right bottom, rgba(32, 192, 0, 0.1), rgba(32, 192, 0, 0.8));
+	.computepressure .first:hover svg path {
+		fill: rgba(0, 255, 255, 1);
 	}
-	.fair:hover {
-		background: linear-gradient(to right bottom, rgba(32, 192, 0, 0.5), rgba(32, 192, 0, 1));
+
+	.computepressure svg {
+		width: 24px;
+		height: 24px;
+		margin-right: 2px;
 	}
+
 	.serious {
-		background: linear-gradient(to right bottom, rgba(192, 128, 0, 0.1), rgba(192, 128, 0, 0.8));
 	}
 	.serious:hover {
-		background: linear-gradient(to right bottom, rgba(192, 128, 0, 0.5), rgba(192, 128, 0, 1));
 	}
 	.critical {
-		background: linear-gradient(to right bottom, rgba(192, 0, 32, 0.1), rgba(192, 0, 32, 0.8));
 	}
 	.critical:hover {
-		background: linear-gradient(to right bottom, rgba(192, 0, 32, 0.5), rgba(192, 0, 32, 1));
 	}
 </style>

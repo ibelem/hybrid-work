@@ -117,7 +117,7 @@
 		border: none;
 		border-radius: 0 6px 6px 0;
 		background-color: #5e4dcd;
-		color: rgba(255, 255, 255, 0.8);
+		color: rgba(255, 255, 255, 0.9);
 		cursor: pointer;
 		transition: background-color 0.3s ease-in-out;
 		display: flex;
@@ -130,15 +130,15 @@
 	}
 
 	.button--submit svg path {
-		fill: rgba(255, 255, 255, 0.8);
+		fill: rgba(255, 255, 255, 0.9);
 	}
 
-	.button--submit:hover {
+	.input-group:hover .button--submit {
 		color: rgba(255, 255, 255, 1);
 		background-color: #3e3dad;
 	}
 
-	.button--submit:hover svg path {
+	.input-group:hover .button--submit svg path {
 		fill: rgba(255, 255, 255, 1);
 	}
 

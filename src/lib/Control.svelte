@@ -171,11 +171,9 @@
 	}
 
 	.control {
-		margin: 1rem auto;
-		position: fixed;
-		bottom: 2rem;
-		left: 50%;
-		transform: translateX(-50%);
+		margin: 1rem auto 0 auto;
+		display: block;
+		text-align: center;
 	}
 
 	.control button {
@@ -209,7 +207,7 @@
 	}
 
 	.control button svg path {
-		fill: rgba(255, 255, 255, 0.8);
+		fill: rgba(255, 255, 255, 0.9);
 	}
 
 	.control button:hover svg path {

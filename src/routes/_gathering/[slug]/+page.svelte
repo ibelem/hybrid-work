@@ -1,6 +1,6 @@
 <script>
 	import { browser } from '$app/environment';
-	import Header from '../../../lib/HeaderWhite.svelte';
+	import Header from '../../../lib/Header.svelte';
 	import Control from '../../../lib/Control.svelte';
 	import Meter from '../../../lib/Meter.svelte';
 	// import { Face } from 'kalidokit';
@@ -117,8 +117,6 @@
 			const onBRResults = (results) => {
 				cW = outputCanvas.width;
 				cH = outputCanvas.height;
-				cl('-=====================');
-				cl(beauty);
 				if (pauseVideo) {
 					ctx.drawImage(backgroundPause, 0, 0, cW, cH);
 				} else {
@@ -414,17 +412,8 @@
 			<div>5</div>
 		</div>
 
-		<div>
-			<Meter />
-		</div>
-
-		<div bind:this={controlPanel} />
-
-		<Control bind:bb bind:br bind:au={pauseAudio} bind:vi={pauseVideo} />
 		<button id="beauty" type="button" on:click={toggleBeauty}>Beauty</button>
-		<div>
-			<span bind:this={inference}>{inferencedata}</span> ms
-		</div>
+
 		<img
 			bind:this={backgroundImage}
 			src="../img/ssbg/01.jpg"
@@ -433,14 +422,93 @@
 		/>
 		<img bind:this={backgroundPause} src="../img/ssbg/00.jpg" alt="pause" style="display:none" />
 		<div>{@html error}</div>
+
+		<footer>
+			<div class="indicator">
+				<Meter />
+				<div class="inference ichild">
+					<div class="time first">
+						<span bind:this={inference}>{inferencedata}</span> <span class="unit">ms</span>
+					</div>
+					<div class="title">Inference Time</div>
+				</div>
+				<div class="inferencefps ichild">
+					<div class="fps first">
+						<span id="fps">0</span>
+					</div>
+					<div class="title">FPS</div>
+				</div>
+			</div>
+
+			<div bind:this={controlPanel} style="display: none" />
+			<Control bind:bb bind:br bind:au={pauseAudio} bind:vi={pauseVideo} />
+		</footer>
 	</div>
 </div>
 
 <style>
+	footer {
+		position: fixed;
+		bottom: 24px;
+		width: 100%;
+	}
+
+	.indicator {
+		text-transform: uppercase;
+		display: flex;
+		font-family: 'Exo 2';
+		justify-content: left;
+	}
+
+	.indicator .ichild:hover {
+		cursor: pointer;
+	}
+
+	.indicator .ichild {
+		width: 136px;
+		margin-right: 4px;
+	}
+
+	.indicator .ichild:last-child {
+		margin-right: 0;
+	}
+
+	.indicator .ichild .first {
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		font-size: 24px;
+		padding: 6px 0 8px 0;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.05);
+		color: rgba(255, 255, 255, 0.9);
+		letter-spacing: 0px;
+	}
+
+	.inference .time .unit {
+		letter-spacing: 0;
+		text-transform: lowercase;
+	}
+
+	.indicator .ichild .first:hover {
+		background: rgba(0, 255, 255, 0.05);
+		color: rgba(0, 255, 255, 1);
+		border: 1px solid rgba(0, 255, 255, 0.2);
+	}
+
+	.indicator .ichild .title {
+		border: 0;
+		font-size: 10px !important;
+		padding: 6px;
+	}
+
 	.gathering {
 		min-height: calc(100vh - 16px);
 		padding: 8px 24px;
 		background-color: rgba(32, 33, 36, 1);
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.gathering:hover {
 		color: rgba(255, 255, 255, 1);
 	}
 
