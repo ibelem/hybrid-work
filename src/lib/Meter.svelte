@@ -79,28 +79,55 @@
 		padding: 6px 0 8px 0;
 		align-items: center;
 		justify-content: center;
-		background: rgba(0, 0, 0, 0.05);
+		background: rgba(32, 33, 36, 1);
 		color: rgba(255, 255, 255, 0.9);
 		letter-spacing: 0px;
 		align-content: center;
 		display: flex;
+		position: relative;
+	}
+
+	.computepressure:hover .first::after {
+		content: '';
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
+		background-size: 100%;
+		width: calc(100% + 0px);
+		height: calc(100% + 2px);
+		z-index: -1;
 	}
 
 	.computepressure .title {
 		border: 0;
 		font-size: 10px !important;
 		padding: 6px;
+		text-transform: uppercase;
 	}
 
-	.computepressure .first:hover {
-		background: rgba(0, 255, 255, 0.05);
+	.computepressure:hover .title {
 		color: rgba(0, 255, 255, 1);
-		border: 1px solid rgba(0, 255, 255, 0.2);
+	}
+
+	.computepressure:hover .first {
+		color: rgba(0, 255, 255, 1);
+		border-top: 1px rgba(0, 255, 255, 0.2) solid;
+		border-left: 1px rgba(0, 255, 255, 0.2) solid;
+		border-right: 1px rgba(0, 255, 255, 0.2) solid;
 		cursor: pointer;
 	}
 
-	.computepressure .first svg {
-		margin-right: 2px;
+	.indicator .computepressure .first {
+		flex-direction: row;
+	}
+
+	.indicator:hover .computepressure .first {
+		flex-direction: column;
+	}
+
+	.indicator:hover .computepressure .first {
+		font-size: 12px;
 	}
 
 	.computepressure .first svg path {
@@ -114,9 +141,17 @@
 	.computepressure svg {
 		width: 24px;
 		height: 24px;
-		margin-right: 2px;
 	}
 
+	.indicator .computepressure .first svg {
+		margin-right: 2px;
+		margin-bottom: 0px;
+	}
+
+	.nominal {
+	}
+	.fair {
+	}
 	.serious {
 	}
 	.serious:hover {

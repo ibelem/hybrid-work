@@ -6,7 +6,8 @@
 		me = false,
 		bb = false,
 		br = false,
-		ns = false;
+		ns = false,
+		none = 'none';
 	const screen = () => {};
 	const vI = () => {
 		vi = !vi;
@@ -25,9 +26,11 @@
 	};
 	const bB = () => {
 		bb = !bb;
+		bb || br ? (none = '') : (none = 'none');
 	};
 	const bR = () => {
 		br = !br;
+		bb || br ? (none = '') : (none = 'none');
 	};
 	const nS = () => {
 		ns = !ns;
@@ -219,29 +222,12 @@
 		background-color: transparent;
 	}
 
-	.control button.disabled {
-		display: none;
-	}
-
-	.control button.disabled svg {
-		color: rgb(255, 255, 255, 0.2);
-	}
-
-	.control button.disabled:hover {
-		border-color: rgb(255, 255, 255, 0.2);
-		background-color: rgb(255, 255, 255, 0.2);
-	}
-
 	.control button.disabled:hover svg {
 		color: rgb(255, 255, 255, 0.4);
 	}
 
 	.control button:hover svg {
 		color: white;
-	}
-
-	button.act {
-		border-color: rgba(204, 255, 144, 1);
 	}
 
 	button.act svg path {

@@ -51,12 +51,10 @@
 		cursor: pointer;
 	}
 
-	.white circle.ln,
 	.white line.ln {
-		stroke: rgba(255, 255, 255, 0.9);
+		stroke: transparent;
 	}
 
-	.white:hover circle.ln,
 	.white:hover line.ln {
 		stroke: rgba(255, 255, 255, 1);
 	}
@@ -76,12 +74,15 @@
 	}
 
 	.normal circle.ci {
-		fill: #d9d9d9;
+		fill: #3e3dad;
 	}
 
-	.normal line.ln,
-	.normal circle.ln {
-		stroke: #d9d9d9;
+	.normal line.ln {
+		stroke: transparent;
+	}
+
+	.normal:hover line.ln {
+		stroke: #3e3dad;
 	}
 
 	.normal path.black {

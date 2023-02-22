@@ -25,6 +25,7 @@
 	let cW, cH;
 	let br = false;
 	let bb = false;
+	let none = 'none';
 	let pauseAudio = true;
 	let pauseVideo = false;
 	let beauty = false;
@@ -426,22 +427,24 @@
 		<footer>
 			<div class="indicator">
 				<Meter />
-				<div class="inference ichild">
+				<div class="inference ichild {none}">
 					<div class="time first">
-						<span bind:this={inference}>{inferencedata}</span> <span class="unit">ms</span>
+						<div bind:this={inference} id="inferencetime">{inferencedata}</div>
+						<div class="unit">ms</div>
 					</div>
 					<div class="title">Inference Time</div>
 				</div>
-				<div class="inferencefps ichild">
+				<div class="inferencefps ichild {none}">
 					<div class="fps first">
-						<span id="fps">0</span>
+						<div id="fps">0</div>
+						<div class="unit">fps</div>
 					</div>
-					<div class="title">FPS</div>
+					<div class="title">Inference FPS</div>
 				</div>
 			</div>
 
 			<div bind:this={controlPanel} style="display: none" />
-			<Control bind:bb bind:br bind:au={pauseAudio} bind:vi={pauseVideo} />
+			<Control bind:bb bind:br bind:au={pauseAudio} bind:vi={pauseVideo} bind:none />
 		</footer>
 	</div>
 </div>
@@ -454,10 +457,18 @@
 	}
 
 	.indicator {
-		text-transform: uppercase;
+		text-transform: lowercase;
 		display: flex;
 		font-family: 'Exo 2';
 		justify-content: left;
+	}
+
+	.indicator .title {
+		text-transform: uppercase;
+	}
+
+	.indicator .none {
+		display: none;
 	}
 
 	.indicator .ichild:hover {
@@ -479,26 +490,64 @@
 		padding: 6px 0 8px 0;
 		align-items: center;
 		justify-content: center;
-		background: rgba(0, 0, 0, 0.05);
+		background: rgba(32, 33, 36, 1);
 		color: rgba(255, 255, 255, 0.9);
 		letter-spacing: 0px;
+		position: relative;
+		display: flex;
+		flex-direction: row;
+		align-items: flex-end;
 	}
 
-	.inference .time .unit {
+	.indicator:hover .ichild .first {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.unit {
 		letter-spacing: 0;
 		text-transform: lowercase;
 	}
 
-	.indicator .ichild .first:hover {
-		background: rgba(0, 255, 255, 0.05);
+	.indicator .ichild .first .unit {
+		margin-left: 4px;
+		font-size: 12px;
+	}
+
+	.indicator:hover .ichild .first .unit {
+		margin-left: 0;
+	}
+
+	.indicator:hover .ichild .first #inferencetime,
+	.indicator:hover .ichild .first #fps {
+		font-size: 40px;
+	}
+
+	.indicator:hover .ichild .first {
 		color: rgba(0, 255, 255, 1);
 		border: 1px solid rgba(0, 255, 255, 0.2);
+	}
+
+	.indicator .ichild:hover .first ::after {
+		content: '';
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
+		background-size: 100%;
+		width: calc(100% + 0px);
+		height: calc(100% + 2px);
+		z-index: -1;
 	}
 
 	.indicator .ichild .title {
 		border: 0;
 		font-size: 10px !important;
 		padding: 6px;
+	}
+
+	.indicator .ichild:hover .title {
+		color: rgba(0, 255, 255, 1);
 	}
 
 	.gathering {
