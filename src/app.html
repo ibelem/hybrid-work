@@ -139,6 +139,35 @@
 			width: 40px;
 			height: 40px;
 		}
+
+		.v {
+			width: 100%;
+			aspect-ratio: 16 / 9;
+			border: 1px solid red;
+			max-height: 50vh;
+		}
+
+		.v:hover {
+			cursor: pointer;
+		}
+
+		.v:hover svg {
+			fill: rgba(255, 255, 255, 1) !important;
+		}
+
+		.v:hover .pausevideomsg {
+			color: rgba(255, 255, 255, 1) !important;
+		}
+
+		.username {
+			position: relative;
+			top: -12px;
+			color: rgba(255, 255, 255, 0.8);
+		}
+
+		.v:hover .username {
+			color: rgba(255, 255, 255, 1);
+		}
 	</style>
 	<script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>
 	<script src="../js/mediapipe/control_utils_local.js" crossorigin="anonymous"></script>

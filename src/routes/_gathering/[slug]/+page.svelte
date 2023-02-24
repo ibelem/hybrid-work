@@ -266,37 +266,18 @@
 	};
 
 	function addVideo(subscription, remotestream, username) {
-		let usernametag = '';
-		if (username) {
-			usernametag = `<div class="username">${username}</div><div class="usernamefs">${username}</div>`;
-		}
+		// onclick="switchfullscreen(this)"
 		let divcode = `
-    <div class="vslot" id=${'div' + remotestream.id}>
-      <video autoplay id=${
-				'v' + remotestream.id
-			} style="display:block" onclick="switchfullscreen(this)">this browser does not supported video tag
+      <video autoplay id=${'v' + remotestream.id} >
       </video>
-      <div class="bar">
-        <button type="button" class="btnfullscreen" onclick="remotefullscreen(this)">
-          <svg viewBox="0 0 448 512">
-            <path
-              fill="currentColor"
-              d="M0 180V56c0-13.3 10.7-24 24-24h124c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H64v84c0 6.6-5.4 12-12 12H12c-6.6 0-12-5.4-12-12zM288 44v40c0 6.6 5.4 12 12 12h84v84c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12V56c0-13.3-10.7-24-24-24H300c-6.6 0-12 5.4-12 12zm148 276h-40c-6.6 0-12 5.4-12 12v84h-84c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h124c13.3 0 24-10.7 24-24V332c0-6.6-5.4-12-12-12zM160 468v-40c0-6.6-5.4-12-12-12H64v-84c0-6.6-5.4-12-12-12H12c-6.6 0-12 5.4-12 12v124c0 13.3 10.7 24 24 24h124c6.6 0 12-5.4 12-12z"
-            ></path>
-          </svg>
-        </button>
-      </div>
-      ${usernametag}
-    </div>
+			<div class="username">${username}</div>
     `;
 		let div = document.createElement('div');
+		div.srcObject = subscription.stream;
+		div.setAttribute('id', 'div' + remotestream.id);
+		div.setAttribute('class', 'v');
 		div.innerHTML = divcode;
 		document.querySelector('#gatheringContainer').appendChild(div);
-		let t = document.querySelector('#v' + remotestream.id);
-		t.srcObject = subscription.stream;
-		console.log(t);
-		console.log(username);
-		console.log(username);
 		console.log(username);
 	}
 
@@ -743,12 +724,14 @@
 		<div bind:this={gatheringContainer} class={column} id="gatheringContainer">
 			<div class="v">
 				{#if pauseVideo}
-					<svg class="mutevideo" viewBox="0 0 640 512">
-						<path
-							d="M633.8 458.1l-55-42.5c15.4-1.4 29.2-13.7 29.2-31.1v-257c0-25.5-29.1-40.4-50.4-25.8L448 177.3v137.2l-32-24.7v-178c0-26.4-21.4-47.8-47.8-47.8H123.9L45.5 3.4C38.5-2 28.5-.8 23 6.2L3.4 31.4c-5.4 7-4.2 17 2.8 22.4L42.7 82 416 370.6l178.5 138c7 5.4 17 4.2 22.5-2.8l19.6-25.3c5.5-6.9 4.2-17-2.8-22.4zM32 400.2c0 26.4 21.4 47.8 47.8 47.8h288.4c11.2 0 21.4-4 29.6-10.5L32 154.7v245.5z"
-						/>
-					</svg>
-					<div class="pausevideomsg">{pauseVideoMsg}</div>
+					<div class="mutediv">
+						<svg class="mutevideo" viewBox="0 0 640 512">
+							<path
+								d="M633.8 458.1l-55-42.5c15.4-1.4 29.2-13.7 29.2-31.1v-257c0-25.5-29.1-40.4-50.4-25.8L448 177.3v137.2l-32-24.7v-178c0-26.4-21.4-47.8-47.8-47.8H123.9L45.5 3.4C38.5-2 28.5-.8 23 6.2L3.4 31.4c-5.4 7-4.2 17 2.8 22.4L42.7 82 416 370.6l178.5 138c7 5.4 17 4.2 22.5-2.8l19.6-25.3c5.5-6.9 4.2-17-2.8-22.4zM32 400.2c0 26.4 21.4 47.8 47.8 47.8h288.4c11.2 0 21.4-4 29.6-10.5L32 154.7v245.5z"
+							/>
+						</svg>
+						<div class="pausevideomsg">{pauseVideoMsg}</div>
+					</div>
 				{/if}
 				<canvas class={pauseVideo} bind:this={outputCanvas} />
 			</div>
@@ -800,8 +783,10 @@
 <style>
 	footer {
 		position: fixed;
+		padding-top: 24px;
 		bottom: 24px;
 		width: 100%;
+		background-color: rgba(32, 33, 36, 1);
 	}
 
 	.indicator {
@@ -918,7 +903,6 @@
 	}
 
 	#gatheringContainer canvas {
-		width: 100%;
 		height: 100%;
 		aspect-ratio: 16 / 9;
 	}
@@ -933,7 +917,6 @@
 		display: grid;
 		align-items: center;
 		justify-items: center;
-		grid-gap: 10px;
 	}
 
 	.grid1 {
@@ -1021,6 +1004,14 @@
 			grid-template-columns: repeat(5, 1fr);
 		}
 	}
+
+	.mutediv {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
 	svg.mutevideo {
 		fill: rgba(255, 255, 255, 0.6);
 		width: 20%;
@@ -1028,15 +1019,6 @@
 	}
 	.pausevideomsg {
 		color: rgba(255, 255, 255, 0.6);
-	}
-	.v:hover svg.mutevideo {
-		fill: rgba(255, 255, 255, 1);
-	}
-	.v:hover .pausevideomsg {
-		color: rgba(255, 255, 255, 1);
-	}
-	.v {
-		width: 100%;
 	}
 	canvas.false {
 		display: block;
