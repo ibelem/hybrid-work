@@ -74,13 +74,13 @@
 	}
 
 	.computepressure .first {
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--white-01);
 		font-size: 24px;
 		padding: 6px 0 8px 0;
 		align-items: center;
 		justify-content: center;
 		background: rgba(32, 33, 36, 1);
-		color: rgba(255, 255, 255, 0.9);
+		color: var(--white-09);
 		letter-spacing: 0px;
 		align-content: center;
 		display: flex;
@@ -131,7 +131,7 @@
 	}
 
 	.computepressure .first svg path {
-		fill: rgba(255, 255, 255, 0.9);
+		fill: var(--white-09);
 	}
 
 	.computepressure .first:hover svg path {

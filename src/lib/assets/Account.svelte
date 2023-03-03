@@ -30,12 +30,12 @@
 		--f: 1.25;
 	}
 	svg path.normal {
-		fill: rgba(0, 0, 0, 0.87);
+		fill: var(--black);
 	}
 	svg path.white {
-		fill: rgba(255, 255, 255, 0.9);
+		fill: var(--white-09);
 	}
 	svg:hover path.white {
-		fill: rgba(255, 255, 255, 1);
+		fill: var(--white);
 	}
 </style>

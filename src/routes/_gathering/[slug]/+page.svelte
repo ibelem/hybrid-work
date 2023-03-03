@@ -551,21 +551,24 @@
 				},
 				(err) => {
 					cl(err.message);
-					error = `No remote camera stream show in page (caused by certificate in test
-							  environment)?<br><br>
+					error = `
+						<div class="certmsg">
+							No remote camera stream show in page (caused by certificate in test
+							environment)?<br><br>
 
-							  NET::ERR_CERT_AUTHORITY_INVALID
+							NET::ERR_CERT_AUTHORITY_INVALID
 
-							  <ol>
-							    <li>
-							      Visit
-							      <a href="https://10.239.115.52:8080/socket.io/?EIO=3&transport=polling">the test page</a>
-							    </li>
-							    <li>
-							    "Your connection is not private" -&gt; Click "Advanced" button -&gt; Click "Proceed to 10.239.115.78 (unsafe)"
-							    </li>
-							    <li>Go back and refresh this page.</li>
-							  </ol>`;
+							<ol>
+								<li>
+									Visit
+									<a href="https://10.239.115.52:8080/socket.io/?EIO=3&transport=polling">the test page</a>
+								</li>
+								<li>
+								"Your connection is not private" -&gt; Click "Advanced" button -&gt; Click "Proceed to xxx.xxx.xxx.xxx (unsafe)"
+								</li>
+								<li>Go back and refresh this page.</li>
+							</ol>
+						</div>`;
 				}
 			);
 		});
@@ -786,7 +789,7 @@
 		padding-top: 24px;
 		bottom: 24px;
 		width: 100%;
-		background-color: rgba(32, 33, 36, 1);
+		background-color: var(--blackbg);
 	}
 
 	.indicator {
@@ -818,13 +821,13 @@
 	}
 
 	.indicator .ichild .first {
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--white-01);
 		font-size: 24px;
 		padding: 6px 0 8px 0;
 		align-items: center;
 		justify-content: center;
-		background: rgba(32, 33, 36, 1);
-		color: rgba(255, 255, 255, 0.9);
+		background: var(--blackbg);
+		color: var(--white-09);
 		letter-spacing: 0px;
 		position: relative;
 		display: flex;
@@ -886,12 +889,12 @@
 	.gathering {
 		min-height: calc(100vh - 16px);
 		padding: 8px 24px;
-		background-color: rgba(32, 33, 36, 1);
-		color: rgba(255, 255, 255, 0.9);
+		background-color: var(--blackbg);
+		color: var(--white-09);
 	}
 
 	.gathering:hover {
-		color: rgba(255, 255, 255, 1);
+		color: var(--white);
 	}
 
 	.container {
@@ -1013,12 +1016,12 @@
 		justify-content: center;
 	}
 	svg.mutevideo {
-		fill: rgba(255, 255, 255, 0.6);
+		fill: var(--white-06);
 		width: 20%;
 		height: 20%;
 	}
 	.pausevideomsg {
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--white-06);
 	}
 	canvas.false {
 		display: block;

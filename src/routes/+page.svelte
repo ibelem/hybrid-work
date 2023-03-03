@@ -39,13 +39,27 @@
 					placeholder="Enter a nickname"
 					autocomplete="off"
 				/>
-				<button class="button--submit" href="." on:click={join}>
-					Join
-					<svg height="48" width="48"
-						><path
-							d="M24.45 42v-3H39V9H24.45V6H39q1.2 0 2.1.9.9.9.9 2.1v30q0 1.2-.9 2.1-.9.9-2.1.9Zm-3.9-9.25L18.4 30.6l5.1-5.1H6v-3h17.4l-5.1-5.1 2.15-2.15 8.8 8.8Z"
-						/></svg
-					>
+
+				<button class="join" href="." on:click={join}>
+					<span>
+						<span aria-hidden="true">
+							<svg height="48" viewBox="0 96 960 960" width="48"
+								><path
+									d="M489 936v-60h291V276H489v-60h291q24 0 42 18t18 42v600q0 24-18 42t-42 18H489Zm-78-185-43-43 102-102H120v-60h348L366 444l43-43 176 176-174 174Z"
+								/></svg
+							>
+						</span>
+						<span>Join</span>
+						<span aria-hidden="true">
+							<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+								/>
+							</svg>
+						</span>
+					</span>
 				</button>
 			</form>
 		</div>
@@ -56,6 +70,11 @@
 </div>
 
 <style>
+	:root {
+		--transition: 0.28s;
+		--font-size: 1.2rem;
+	}
+
 	.container {
 		margin: 0 auto;
 	}
@@ -93,13 +112,13 @@
 	}
 
 	.input {
-		height: 36px;
-		max-width: 150px;
+		height: 46px;
+		max-width: 180px;
 		padding: 0 1rem;
-		border: 1px solid #5e4dcd;
+		border: 1px solid var(--energyblue);
 		border-radius: 6px 0 0 6px;
 		background-color: transparent;
-		font-size: 0.9rem;
+		font-size: 1.2rem;
 	}
 
 	::placeholder {
@@ -110,42 +129,86 @@
 		color: rgba(0, 0, 0, 0);
 	}
 
-	.button--submit {
-		height: 37px;
-		font-size: 1rem;
-		padding: 0 1rem;
-		border: none;
-		border-radius: 0 6px 6px 0;
-		background-color: #5e4dcd;
-		color: rgba(255, 255, 255, 0.9);
+	.join {
+		outline-color: var(--energyblue);
+		--padding: calc(var(--font-size) * 0.75);
+		font-size: 1.2rem;
 		cursor: pointer;
-		transition: background-color 0.3s ease-in-out;
-		display: flex;
+		background: var(--energyblue);
+		border-radius: 0 6px 6px 0;
+		border: 1px solid var(--energyblue);
+		color: #fff;
+		position: relative;
+		transition: border-color var(--transition);
+		width: 120px;
+		height: 48px;
+	}
+
+	.join > span {
+		overflow: hidden;
+		display: grid;
+		grid-template-columns:
+			calc((var(--font-size) * 1.75) * (1 - var(--hovered, 0)))
+			1fr
+			calc((var(--font-size) * 1.75) * var(--hovered, 0));
 		align-items: center;
+		transition: grid-template-columns var(--transition);
 	}
 
-	.button--submit svg {
-		zoom: 0.35;
-		margin-left: 1rem;
+	.join:after {
+		content: '';
+		position: absolute;
+		inset: calc(var(--font-size) * -0.025);
+		background: var(--classicblue);
+		filter: blur(calc(var(--font-size) * 0.75));
+		scale: var(--hovered, 0);
+		z-index: -1;
+		transition: scale var(--transition);
 	}
 
-	.button--submit svg path {
-		fill: rgba(255, 255, 255, 0.9);
+	.join:hover {
+		--hovered: 1;
 	}
 
-	.input-group:hover .button--submit {
-		color: rgba(255, 255, 255, 1);
-		background-color: #3e3dad;
+	.input-group:hover .join {
+		background: var(--classicblue);
 	}
 
-	.input-group:hover .button--submit svg path {
-		fill: rgba(255, 255, 255, 1);
+	.input-group:hover .input,
+	.input-group:hover .join {
+		border-color: var(--classicblue);
+	}
+
+	.join svg {
+		max-height: 38px;
+		transition: translate var(--transition) ease-in-out, opacity var(--transition) ease-in-out;
+	}
+
+	.join svg path {
+		fill: var(--white);
+	}
+
+	.join:is(:focus-visible, :hover) {
+		--hovered: 1;
+	}
+
+	.join span span:nth-of-type(3) svg {
+		stroke-width: 3;
+		translate: calc((1 - var(--hovered, 0)) * (var(--font-size) * 3)) 8%;
+		width: calc(var(--font-size) * 1);
+		opacity: var(--hovered, 0);
+	}
+
+	.join span span:nth-of-type(1) svg {
+		stroke-width: 3;
+		translate: calc(((var(--hovered, 0) * var(--font-size)) * -3) + 10%) 8%;
+		width: calc(var(--font-size) * 1.4);
 	}
 
 	.input:focus,
 	.input:hover,
 	.input:focus-visible {
-		border-color: #3e3dad;
+		border-color: var(--classicblue);
 		outline: none;
 	}
 

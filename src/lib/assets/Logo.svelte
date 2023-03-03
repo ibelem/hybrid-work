@@ -56,25 +56,25 @@
 	}
 
 	.white:hover line.ln {
-		stroke: rgba(255, 255, 255, 1);
+		stroke: var(--white);
 	}
 
 	.white circle.ci,
 	.white path.black,
 	.white path.blue,
 	.white circle.blue {
-		fill: rgba(255, 255, 255, 0.9);
+		fill: var(--white-09);
 	}
 
 	.white:hover circle.ci,
 	.white:hover path.black,
 	.white:hover path.blue,
 	.white:hover circle.blue {
-		fill: rgba(255, 255, 255, 1);
+		fill: var(--white);
 	}
 
 	.normal circle.ci {
-		fill: #3e3dad;
+		fill: var(--classicblue);
 	}
 
 	.normal line.ln {
@@ -82,14 +82,14 @@
 	}
 
 	.normal:hover line.ln {
-		stroke: #3e3dad;
+		stroke: var(--classicblue);
 	}
 
 	.normal path.black {
-		fill: rgba(0, 0, 0, 0.87);
+		fill: var(--black);
 	}
 	.normal path.blue,
 	.normal circle.blue {
-		fill: #3e3dad;
+		fill: var(--classicblue);
 	}
 </style>

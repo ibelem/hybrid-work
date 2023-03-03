@@ -10,6 +10,19 @@
 	<link rel="icon" type="image/png" sizes="16x16" href="%sveltekit.assets%/favicon/favicon-16x16.png">
 	<link rel="manifest" href="%sveltekit.assets%/favicon/site.webmanifest">
 	<style>
+		:root {
+			--black: rgba(0, 0, 0, 0.87);
+			--blackbg: rgba(32, 33, 36, 1);
+			--white: rgba(255, 255, 255, 1);
+			--white-09: rgba(255, 255, 255, 0.9);
+			--white-08: rgba(255, 255, 255, 0.8);
+			--white-06: rgba(255, 255, 255, 0.6);
+			--white-02: rgba(255, 255, 255, 0.2);
+			--white-01: rgba(255, 255, 255, 0.1);
+			--energyblue: #008afa;
+			--classicblue: #3852ce;
+		}
+
 		@font-face {
 			font-display: swap;
 			/* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
@@ -119,7 +132,7 @@
 			font-style: normal;
 			text-align: center;
 			margin: 0 auto;
-			color: rgba(0, 0, 0, .87);
+			color: var(--black);
 			min-height: 100vh;
 		}
 
@@ -152,21 +165,51 @@
 		}
 
 		.v:hover svg {
-			fill: rgba(255, 255, 255, 1) !important;
+			fill: var(--white) !important;
 		}
 
 		.v:hover .pausevideomsg {
-			color: rgba(255, 255, 255, 1) !important;
+			color: var(--white) !important;
 		}
 
 		.username {
 			position: relative;
 			top: -12px;
-			color: rgba(255, 255, 255, 0.8);
+			color: var(--white-08);
 		}
 
 		.v:hover .username {
-			color: rgba(255, 255, 255, 1);
+			color: var(--white);
+		}
+
+		.certmsg {
+			position: fixed;
+			right: 0px;
+			bottom: 0px;
+			width: 400px;
+			border: 1px solid var(--white-02);
+			padding: 20px;
+			background-color: #5e4dcd;
+			z-index: 10001;
+			text-align: left;
+		}
+
+		.certmsg:hover {
+			background-color: #2e2dad;
+			border: 1px solid var(--white-01);
+		}
+
+		.certmsg ol {
+			margin-left: -26px;
+			margin-bottom: 0;
+		}
+
+		.certmsg ol a {
+			color: white;
+		}
+
+		.certmsg:hover {
+			border: 1px solid var(--white-08);
 		}
 	</style>
 	<script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>

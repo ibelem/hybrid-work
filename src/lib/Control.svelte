@@ -216,15 +216,15 @@
 	}
 
 	.control button svg path {
-		fill: rgba(255, 255, 255, 0.9);
+		fill: var(--white-09);
 	}
 
 	.control button:hover svg path {
-		fill: rgba(255, 255, 255, 1);
+		fill: var(--white);
 	}
 
 	.control button:hover {
-		border: 2px solid rgba(255, 255, 255, 1);
+		border: 2px solid var(--white);
 		background-color: transparent;
 	}
 
