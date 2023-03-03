@@ -29,7 +29,7 @@
 	let none = 'none';
 	let pauseAudio = true,
 		pauseVideoMsg = '';
-	let pauseVideo = true;
+	let pauseVideo = false;
 	let audioOnly = false;
 	let beauty = false;
 
@@ -183,7 +183,7 @@
 			localPublication.mute(Owt.Base.TrackKind.VIDEO).then(
 				() => {
 					console.info('mute video');
-					pauseVideoMsg = 'Your camera is truned off';
+					pauseVideoMsg = 'Your camera is turned off';
 					pauseVideo = !pauseVideo;
 				},
 				(err) => {
@@ -273,12 +273,11 @@
 			<div class="username">${username}</div>
     `;
 		let div = document.createElement('div');
-		div.srcObject = subscription.stream;
 		div.setAttribute('id', 'div' + remotestream.id);
 		div.setAttribute('class', 'v');
 		div.innerHTML = divcode;
 		document.querySelector('#gatheringContainer').appendChild(div);
-		console.log(username);
+		document.querySelector('#v' + remotestream.id).srcObject = subscription.stream;
 	}
 
 	const subscribeStream = (remotestream) => {
@@ -530,7 +529,7 @@
 
 					cl('222');
 
-					pauseVideoMsg = 'Your camera is truned off';
+					pauseVideoMsg = 'Your camera is turned off';
 
 					loadUserList();
 
@@ -719,8 +718,8 @@
 <div class="gathering">
 	<Header nickname={data.nickname} />
 
-	<div class="container">
-		<video bind:this={inputVideo}>
+	<div class="videos">
+		<video id="owner" bind:this={inputVideo}>
 			<track kind="captions" />
 		</video>
 
@@ -737,6 +736,7 @@
 					</div>
 				{/if}
 				<canvas class={pauseVideo} bind:this={outputCanvas} />
+				<div class="username">{localname}</div>
 			</div>
 		</div>
 
@@ -784,249 +784,4 @@
 </div>
 
 <style>
-	footer {
-		position: fixed;
-		padding-top: 24px;
-		bottom: 24px;
-		width: 100%;
-		background-color: var(--blackbg);
-	}
-
-	.indicator {
-		text-transform: lowercase;
-		display: flex;
-		font-family: 'Exo 2';
-		justify-content: left;
-	}
-
-	.indicator .title {
-		text-transform: uppercase;
-	}
-
-	.indicator .none {
-		display: none;
-	}
-
-	.indicator .ichild:hover {
-		cursor: pointer;
-	}
-
-	.indicator .ichild {
-		width: 136px;
-		margin-right: 4px;
-	}
-
-	.indicator .ichild:last-child {
-		margin-right: 0;
-	}
-
-	.indicator .ichild .first {
-		border: 1px solid var(--white-01);
-		font-size: 24px;
-		padding: 6px 0 8px 0;
-		align-items: center;
-		justify-content: center;
-		background: var(--blackbg);
-		color: var(--white-09);
-		letter-spacing: 0px;
-		position: relative;
-		display: flex;
-		flex-direction: row;
-		align-items: flex-end;
-	}
-
-	.indicator:hover .ichild .first {
-		flex-direction: column;
-		align-items: center;
-	}
-
-	.unit {
-		letter-spacing: 0;
-		text-transform: lowercase;
-	}
-
-	.indicator .ichild .first .unit {
-		margin-left: 4px;
-		font-size: 12px;
-	}
-
-	.indicator:hover .ichild .first .unit {
-		margin-left: 0;
-	}
-
-	.indicator:hover .ichild .first #inferencetime,
-	.indicator:hover .ichild .first .fpsdata {
-		font-size: 40px;
-	}
-
-	.indicator:hover .ichild .first {
-		color: rgba(0, 255, 255, 1);
-		border: 1px solid rgba(0, 255, 255, 0.2);
-	}
-
-	.indicator .ichild:hover .first ::after {
-		content: '';
-		position: absolute;
-		left: 0px;
-		top: 0px;
-		background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
-		background-size: 100%;
-		width: calc(100% + 0px);
-		height: calc(100% + 2px);
-		z-index: -1;
-	}
-
-	.indicator .ichild .title {
-		border: 0;
-		font-size: 10px !important;
-		padding: 6px;
-	}
-
-	.indicator .ichild:hover .title {
-		color: rgba(0, 255, 255, 1);
-	}
-
-	.gathering {
-		min-height: calc(100vh - 16px);
-		padding: 8px 24px;
-		background-color: var(--blackbg);
-		color: var(--white-09);
-	}
-
-	.gathering:hover {
-		color: var(--white);
-	}
-
-	.container {
-		margin: 0 auto;
-	}
-
-	.container video {
-		display: none;
-	}
-
-	#gatheringContainer canvas {
-		height: 100%;
-		aspect-ratio: 16 / 9;
-	}
-
-	video,
-	img {
-		width: 10%;
-		aspect-ratio: 16 / 9;
-	}
-
-	#gatheringContainer {
-		display: grid;
-		align-items: center;
-		justify-items: center;
-	}
-
-	.grid1 {
-		grid-template-columns: 1fr;
-	}
-
-	.grid2 {
-		grid-template-columns: repeat(2, 1fr);
-	}
-
-	.grid3 {
-		grid-template-columns: repeat(3, 1fr);
-	}
-
-	.grid4 {
-		grid-template-columns: repeat(4, 1fr);
-	}
-
-	.grid5 {
-		grid-template-columns: repeat(5, 1fr);
-	}
-
-	@media (max-width: 575px) {
-		.container {
-			max-width: 540px;
-		}
-		.grid1,
-		.grid2,
-		.grid3,
-		.grid4,
-		.grid5 {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	@media (min-width: 576px) {
-		.container {
-			max-width: 540px;
-		}
-
-		.grid1,
-		.grid2,
-		.grid3,
-		.grid4,
-		.grid5 {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media (min-width: 768px) {
-		.container {
-			max-width: 720px;
-		}
-		.grid1,
-		.grid2,
-		.grid3,
-		.grid4,
-		.grid5 {
-			grid-template-columns: repeat(3, 1fr);
-		}
-	}
-
-	@media (min-width: 992px) {
-		.container {
-			max-width: 960px;
-		}
-		.grid1,
-		.grid2,
-		.grid3,
-		.grid4,
-		.grid5 {
-			grid-template-columns: repeat(4, 1fr);
-		}
-	}
-
-	@media (min-width: 1200px) {
-		.container {
-			max-width: 100%;
-		}
-		.grid1,
-		.grid2,
-		.grid3,
-		.grid4,
-		.grid5 {
-			grid-template-columns: repeat(5, 1fr);
-		}
-	}
-
-	.mutediv {
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-	svg.mutevideo {
-		fill: var(--white-06);
-		width: 20%;
-		height: 20%;
-	}
-	.pausevideomsg {
-		color: var(--white-06);
-	}
-	canvas.false {
-		display: block;
-	}
-	canvas.true {
-		display: none;
-	}
 </style>

@@ -136,10 +136,6 @@
 			min-height: 100vh;
 		}
 
-		video {
-			aspect-ratio: 16 / 9;
-		}
-
 		.indicator .computepressure .first svg {
 			margin-right: 4px;
 			margin-bottom: 0px;
@@ -151,13 +147,6 @@
 			margin-bottom: 4px;
 			width: 40px;
 			height: 40px;
-		}
-
-		.v {
-			width: 100%;
-			aspect-ratio: 16 / 9;
-			border: 1px solid red;
-			max-height: 50vh;
 		}
 
 		.v:hover {
@@ -173,9 +162,9 @@
 		}
 
 		.username {
-			position: relative;
-			top: -12px;
 			color: var(--white-08);
+			position: relative;
+			bottom: 30px;
 		}
 
 		.v:hover .username {
@@ -189,13 +178,13 @@
 			width: 400px;
 			border: 1px solid var(--white-02);
 			padding: 20px;
-			background-color: #5e4dcd;
+			background-color: var(--classicblue);
 			z-index: 10001;
 			text-align: left;
 		}
 
 		.certmsg:hover {
-			background-color: #2e2dad;
+			background-color: var(--energyblue);
 			border: 1px solid var(--white-01);
 		}
 
@@ -210,6 +199,279 @@
 
 		.certmsg:hover {
 			border: 1px solid var(--white-08);
+		}
+
+		footer {
+			position: fixed;
+			padding-top: 24px;
+			bottom: 24px;
+			width: 100%;
+		}
+
+		.indicator {
+			text-transform: lowercase;
+			display: flex;
+			font-family: 'Exo 2';
+			justify-content: left;
+		}
+
+		.indicator .title {
+			text-transform: uppercase;
+		}
+
+		.indicator .none {
+			display: none;
+		}
+
+		.indicator .ichild:hover {
+			cursor: pointer;
+		}
+
+		.indicator .ichild {
+			width: 136px;
+			margin-right: 4px;
+		}
+
+		.indicator .ichild:last-child {
+			margin-right: 0;
+		}
+
+		.indicator .ichild .first {
+			border: 1px solid var(--white-01);
+			font-size: 24px;
+			padding: 6px 0 8px 0;
+			align-items: center;
+			justify-content: center;
+			background: var(--blackbg);
+			color: var(--white-09);
+			letter-spacing: 0px;
+			position: relative;
+			display: flex;
+			flex-direction: row;
+			align-items: flex-end;
+		}
+
+		.indicator:hover .ichild .first {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.unit {
+			letter-spacing: 0;
+			text-transform: lowercase;
+		}
+
+		.indicator .ichild .first .unit {
+			margin-left: 4px;
+			font-size: 12px;
+		}
+
+		.indicator:hover .ichild .first .unit {
+			margin-left: 0;
+		}
+
+		.indicator:hover .ichild .first #inferencetime,
+		.indicator:hover .ichild .first .fpsdata {
+			font-size: 40px;
+		}
+
+		.indicator:hover .ichild .first {
+			color: rgba(0, 255, 255, 1);
+			border: 1px solid rgba(0, 255, 255, 0.2);
+		}
+
+		.indicator .ichild:hover .first ::after {
+			content: '';
+			position: absolute;
+			left: 0px;
+			top: 0px;
+			background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
+			background-size: 100%;
+			width: calc(100% + 0px);
+			height: calc(100% + 2px);
+			z-index: -1;
+		}
+
+		.indicator .ichild .title {
+			border: 0;
+			font-size: 10px !important;
+			padding: 6px;
+		}
+
+		.indicator .ichild:hover .title {
+			color: rgba(0, 255, 255, 1);
+		}
+
+		.gathering {
+			min-height: calc(100vh - 16px);
+			padding: 8px 24px;
+			background-color: var(--blackbg);
+			color: var(--white-09);
+		}
+
+		.gathering:hover {
+			color: var(--white);
+		}
+
+		.videos {
+			margin: 0 auto;
+		}
+
+		.videos video#owner {
+			display: none;
+		}
+
+		#gatheringContainer {
+			display: grid;
+			align-items: center;
+			justify-items: center;
+		}
+
+		.grid1 {
+			grid-template-columns: 1fr;
+		}
+
+
+
+		.grid2 {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.grid3 {
+			grid-template-columns: repeat(3, 1fr);
+		}
+
+		.grid4 {
+			grid-template-columns: repeat(4, 1fr);
+		}
+
+		.grid5 {
+			grid-template-columns: repeat(5, 1fr);
+		}
+
+
+		@media (max-width: 575px) {
+
+			.grid1,
+			.grid2,
+			.grid3,
+			.grid4,
+			.grid5 {
+				grid-template-columns: 1fr;
+			}
+
+			.videos .v,
+			.videos .mutediv,
+			.videos canvas,
+			.videos video {
+				width: 88vw;
+			}
+		}
+
+		@media (min-width: 576px) {
+
+			.grid1,
+			.grid2,
+			.grid3,
+			.grid4,
+			.grid5 {
+				grid-template-columns: repeat(2, 1fr);
+			}
+
+			.videos .v,
+			.videos .mutediv,
+			.videos canvas,
+			.videos video {
+				width: 520px;
+			}
+		}
+
+		@media (min-width: 768px) {
+
+			.grid1,
+			.grid2,
+			.grid3,
+			.grid4,
+			.grid5 {
+				grid-template-columns: repeat(3, 1fr);
+			}
+
+			.videos .v,
+			.videos .mutediv,
+			.videos canvas,
+			.videos video {
+				width: 493.3px;
+			}
+		}
+
+		@media (min-width: 992px) {
+
+			.grid1,
+			.grid2,
+			.grid3,
+			.grid4,
+			.grid5 {
+				grid-template-columns: repeat(4, 1fr);
+			}
+
+			.videos .v,
+			.videos .mutediv,
+			.videos canvas,
+			.videos video {
+				width: 370px;
+			}
+		}
+
+		@media (min-width: 1200px) {
+
+			.grid1,
+			.grid2,
+			.grid3,
+			.grid4,
+			.grid5 {
+				grid-template-columns: repeat(5, 1fr);
+			}
+
+			.videos .v,
+			.videos .mutediv,
+			.videos canvas,
+			.videos video {
+				width: 296px;
+			}
+
+		}
+
+		.videos .v,
+		.videos .mutediv,
+		.videos canvas,
+		.videos video {
+			aspect-ratio: 16 / 9;
+		}
+
+		.mutediv {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+
+		svg.mutevideo {
+			fill: var(--white-06);
+			width: 20%;
+			height: 20%;
+		}
+
+		.pausevideomsg {
+			color: var(--white-06);
+		}
+
+		canvas.false {
+			display: block;
+		}
+
+		canvas.true {
+			display: none;
 		}
 	</style>
 	<script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>
