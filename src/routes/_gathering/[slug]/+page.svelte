@@ -377,8 +377,6 @@
 			}
 		}
 		users.splice(index, 1);
-		// $('li').remove(":contains(" + id + ")");
-
 		let userdiv = document.querySelector('.' + id);
 		if (userdiv) {
 			document.querySelector('#gatheringVideos').removeChild(userdiv);
