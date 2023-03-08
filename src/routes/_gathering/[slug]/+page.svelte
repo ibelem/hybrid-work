@@ -35,7 +35,6 @@
 
 	let backgroundImage;
 	let gatheringContainer, gatheringVideos, gatheringInfo, controlPanel;
-	let gatheringVideosChildCount = 4;
 	let gatheringView = 'g gathering';
 	let column;
 	let resolution = { width: 1280, height: 720 };
@@ -66,6 +65,7 @@
 	let localId = null;
 	let users = [];
 	let stream, processedStream, localStream;
+	let videoList = [];
 	let subList = {};
 	let screenSub = null;
 
@@ -80,6 +80,18 @@
 
 	const toggleBeauty = () => {
 		beauty = !beauty;
+	};
+
+	const videoObject = (node, stream) => {
+		node.srcObject = stream;
+		return {
+			update(nextStream) {
+				node.srcObject = stream;
+			},
+			destroy() {
+				/* stream revoking logic here */
+			}
+		};
 	};
 
 	// Face.solve(facelandmarkArray, {
@@ -103,10 +115,8 @@
 	// };
 
 	const updateGrid = () => {
-		gatheringVideosChildCount = gatheringVideos.childElementCount;
-		gatheringVideosChildCount > 4
-			? (column = 'grid5')
-			: (column = 'grid' + gatheringVideos.childElementCount);
+		let t = videoList.length + 1;
+		t > 4 ? (column = 'grid5') : (column = 'grid' + t);
 	};
 
 	const sendIm = (msg, sender) => {
@@ -274,21 +284,6 @@
 		}
 	};
 
-	const addVideo = (subscription, remotestream, username, origin) => {
-		// onclick="switchfullscreen(this)"
-		let divcode = `
-      <video autoplay id=${'v' + remotestream.id}>
-      </video>
-			<div class="username">${username}</div>
-    `;
-		let div = document.createElement('div');
-		div.setAttribute('id', 'div' + remotestream.id);
-		div.setAttribute('class', 'v ' + origin);
-		div.innerHTML = divcode;
-		document.querySelector('#gatheringVideos').appendChild(div);
-		document.querySelector('#v' + remotestream.id).srcObject = subscription.stream;
-	};
-
 	const subscribeStream = (remotestream) => {
 		let videoOption = !audioOnly;
 
@@ -301,13 +296,15 @@
 					remotestream.addEventListener('ended', function (event) {});
 				}
 
-				addVideo(
-					subscription,
-					remotestream,
-					getUserFromId(remotestream.origin).userId,
-					remotestream.origin
-				);
+				let vl = {
+					subscription: subscription,
+					remotestreamid: remotestream.id,
+					username: getUserFromId(remotestream.origin).userId,
+					remotestreamorigin: remotestream.origin
+				};
 
+				videoList.push(vl);
+				videoList = videoList;
 				updateGrid();
 			},
 			(err) => {
@@ -377,14 +374,10 @@
 			}
 		}
 		users.splice(index, 1);
-		let userdiv = document.querySelector('.' + id);
-		if (userdiv) {
-			document.querySelector('#gatheringVideos').removeChild(userdiv);
-			cl('removed .' + id);
-		} else {
-			cl('remove failed');
-		}
 
+		let removeIndex = videoList.map((item) => item.remotestreamorigin).indexOf(id);
+		~removeIndex && videoList.splice(removeIndex, 1);
+		videoList = videoList;
 		updateGrid();
 	};
 
@@ -492,6 +485,11 @@
 					userId: event.participant.userId,
 					role: event.participant.role
 				});
+
+				cl('*****************');
+				cl(event.participant.id);
+				cl(videoList);
+
 				event.participant.addEventListener('left', () => {
 					if (event.participant.id !== null && event.participant.userId !== undefined) {
 						sendIm(event.participant.userId + ' has left the room ', 'System');
@@ -761,6 +759,15 @@
 					<canvas class={pauseVideo} bind:this={outputCanvas} />
 					<div class="username">{localname}</div>
 				</div>
+
+				{#each videoList as vl}
+					<div id="div{vl.remotestreamid}" class="v {vl.remotestreamorigin}">
+						<video autoplay id="v{vl.remotestreamid}" use:videoObject={vl.subscription.stream}>
+							<track kind="captions" />
+						</video>
+						<div class="username">{vl.username}</div>
+					</div>
+				{/each}
 			</div>
 			<div id="gatheringInfo">
 				<div id="participants">
