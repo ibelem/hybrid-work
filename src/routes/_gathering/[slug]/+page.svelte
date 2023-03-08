@@ -64,6 +64,9 @@
 	let localPublication = null;
 	let localId = null;
 	let users = [];
+	let msg = '',
+		msgs = [];
+	let muted = false;
 	let stream, processedStream, localStream;
 	let videoList = [];
 	let subList = {};
@@ -80,6 +83,19 @@
 
 	const toggleBeauty = () => {
 		beauty = !beauty;
+	};
+
+	const initials = (name) => {
+		if (name) {
+			return name
+				.replace(/[^a-zA-Z- ]/g, '')
+				.match(/\b\w/g)
+				.toString()
+				.replace(',', '')
+				.slice(0, 2);
+		} else {
+			return 'unk';
+		}
 	};
 
 	const videoObject = (node, stream) => {
@@ -119,61 +135,22 @@
 		t > 4 ? (column = 'grid5') : (column = 'grid' + t);
 	};
 
-	const sendIm = (msg, sender) => {
-		let time = new Date();
-		let hour = time.getHours();
-		hour = hour > 9 ? hour.toString() : '0' + hour.toString();
-		let mini = time.getMinutes();
-		mini = mini > 9 ? mini.toString() : '0' + mini.toString();
-		let sec = time.getSeconds();
-		sec = sec > 9 ? sec.toString() : '0' + sec.toString();
-		let timeStr = hour + ':' + mini + ':' + sec;
-		cl(msg);
-		// if (msg === undefined) {
-		// 	// send local msg
-		// 	if ($('#text-send').val()) {
-		// 		msg = $('#text-send').val();
-		// 		let sendMsgInfo = JSON.stringify({
-		// 			type: 'msg',
-		// 			data: msg
-		// 		});
-		// 		$('#text-send').val('').height('18px');
-		// 		$('#text-content').css('bottom', '30px');
-		// 		sender = localId;
-		// 		console.info('ready to send message');
-		// 		// send to server
-		// 		if (localname !== null) {
-		// 			room.send(sendMsgInfo).then(
-		// 				() => {
-		// 					console.info('begin to send message');
-		// 					console.info(localname + 'send message: ' + msg);
-		// 				},
-		// 				(err) => {
-		// 					console.error(localname + 'sned failed: ' + err);
-		// 				}
-		// 			);
-		// 		}
-		// 	} else {
-		// 		return;
-		// 	}
-		// }
+	const sendIm = () => {
+		let sendMsgInfo = JSON.stringify({
+			type: 'msg',
+			data: msg
+		});
 
-		// let user = getUserFromId(sender);
-		// let name = user ? user['userId'] : 'System';
-		// if (name !== 'System') {
-		// 	$('<p>')
-		// 		.html(
-		// 			`
-		//   <div class="msghead">
-		//   <div class="msguser">${user.userId}</div><div class="msgtime">${timeStr}</div>
-		//   </div>
-		//   `
-		// 		)
-		// 		.append(document.createTextNode(msg))
-		// 		.appendTo('#text-content');
-		// 	// scroll to bottom of text content
-		// 	$('#text-content').scrollTop($('#text-content').prop('scrollHeight'));
-		// }
+		if (localname !== null) {
+			room.send(sendMsgInfo).then(
+				() => {
+					console.info(localname + 'send message successful: ' + msg);
+				},
+				(err) => {
+					console.error(localname + 'send failed: ' + err);
+				}
+			);
+		}
 	};
 
 	const toggleVideo = () => {
@@ -319,34 +296,6 @@
 		remotestream.addEventListener('updated', () => {});
 	};
 
-	const addUserListItem = (user, muted) => {
-		let muteBtn = `<div class="muteShow" isMuted="true">
-      <svg viewBox="0 0 24 24">
-        <path fill="currentColor" d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" />
-      </svg> 
-    </div>`;
-		let unmuteBtn = `<div class="muteShow" isMuted="true">
-      <svg viewBox="0 0 24 24">
-        <path fill="currentColor" d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" />
-      </svg>
-    </div>`;
-		let muteStatus = muted ? muteBtn : unmuteBtn;
-		// $('#user-list').append(
-		// 	'<li><div class="userID">' +
-		// 		user.id +
-		// 		`</div>
-		// <svg viewBox="0 0 24 24">
-		// <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,6A2,2 0 0,0 10,8A2,2 0 0,0 12,10A2,2 0 0,0 14,8A2,2 0 0,0 12,6M12,13C14.67,13 20,14.33 20,17V20H4V17C4,14.33 9.33,13 12,13M12,14.9C9.03,14.9 5.9,16.36 5.9,17V18.1H18.1V17C18.1,16.36 14.97,14.9 12,14.9Z" />
-		// </svg>
-		// <div class="name">` +
-		// 		user.userId +
-		// 		'</div>' +
-		// 		muteStatus +
-		// 		'</li>'
-		// );
-		cl(user.userId + ' *** ' + muteStatus);
-	};
-
 	const getUserFromName = (name) => {
 		for (let i = 0; i < users.length; ++i) {
 			if (users[i] && users[i].userId === name) {
@@ -375,16 +324,12 @@
 		}
 		users.splice(index, 1);
 
+		users = users;
+
 		let removeIndex = videoList.map((item) => item.remotestreamorigin).indexOf(id);
 		~removeIndex && videoList.splice(removeIndex, 1);
 		videoList = videoList;
 		updateGrid();
-	};
-
-	const loadUserList = () => {
-		for (let u of users) {
-			cl(u);
-		}
 	};
 
 	const getProcessedStream = () => {
@@ -481,15 +426,12 @@
 		room.addEventListener('participantjoined', (event) => {
 			if (event.participant.userId !== 'user' && getUserFromId(event.participant.id) === null) {
 				users.push({
-					id: event.participant.id,
-					userId: event.participant.userId,
-					role: event.participant.role
+					id: participant.id,
+					userId: participant.userId,
+					role: participant.role,
+					userInitials: initials(participant.userId)
 				});
-
-				cl('*****************');
-				cl(event.participant.id);
-				cl(videoList);
-
+				users = users;
 				event.participant.addEventListener('left', () => {
 					if (event.participant.id !== null && event.participant.userId !== undefined) {
 						sendIm(event.participant.userId + ' has left the room ', 'System');
@@ -498,7 +440,6 @@
 						sendIm('Anonymous has left the room.', 'System');
 					}
 				});
-				addUserListItem(event.participant, true);
 			}
 		});
 
@@ -517,6 +458,17 @@
 					sec = sec > 9 ? sec.toString() : '0' + sec.toString();
 					let timeStr = hour + ':' + mini + ':' + sec;
 					cl(`${user.userId} ${timeStr} ${receivedMsg.data}`);
+
+					let msg = {
+						username: user.userId,
+						msgtime: timeStr,
+						msg: receivedMsg.data
+					};
+
+					msgs.push(msg);
+					msgs = msgs;
+
+					// $('#text-content').scrollTop($('#text-content').prop('scrollHeight'));
 				}
 			}
 		});
@@ -541,17 +493,18 @@
 							//TODO:send message for notice everyone the participant has left maybe no need
 							deleteUser(participant.id);
 						});
-						cl('111');
 						users.push({
 							id: participant.id,
 							userId: participant.userId,
-							role: participant.role
+							role: participant.role,
+							userInitials: initials(participant.userId)
 						});
 					});
 
+					users = users;
+
 					pauseVideoMsg = 'Your camera is turned off';
 
-					loadUserList();
 					createLocal();
 
 					for (const stream of streams) {
@@ -636,7 +589,9 @@
 		if (browser) {
 			updateGrid();
 
-			localname = new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '');
+			localname = decodeURI(
+				new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '')
+			);
 
 			const selfieSegmentation = new SelfieSegmentation({
 				locateFile: (file) => {
@@ -747,7 +702,7 @@
 			<div bind:this={gatheringVideos} class={column} id="gatheringVideos">
 				<div class="v">
 					{#if pauseVideo}
-						<div class="mutediv">
+						<div class="muteShow">
 							<svg class="mutevideo" viewBox="0 0 640 512">
 								<path
 									d="M633.8 458.1l-55-42.5c15.4-1.4 29.2-13.7 29.2-31.1v-257c0-25.5-29.1-40.4-50.4-25.8L448 177.3v137.2l-32-24.7v-178c0-26.4-21.4-47.8-47.8-47.8H123.9L45.5 3.4C38.5-2 28.5-.8 23 6.2L3.4 31.4c-5.4 7-4.2 17 2.8 22.4L42.7 82 416 370.6l178.5 138c7 5.4 17 4.2 22.5-2.8l19.6-25.3c5.5-6.9 4.2-17-2.8-22.4zM32 400.2c0 26.4 21.4 47.8 47.8 47.8h288.4c11.2 0 21.4-4 29.6-10.5L32 154.7v245.5z"
@@ -771,20 +726,54 @@
 			</div>
 			<div id="gatheringInfo">
 				<div id="participants">
-					<div class="title">Participants <span id="pnumber" /></div>
-					<!-- <div id="presenters">Presenters (0)</div> -->
-					<div id="user-list" class="bg" />
+					<div class="title">Participants <span id="usercount">({users.length})</span></div>
+					<div id="userList" class="bg">
+						<ul>
+							{#each users as user}
+								<li id={user.id}>
+									<!-- <svg viewBox="0 0 24 24">
+										<path
+											fill="currentColor"
+											d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,6A2,2 0 0,0 10,8A2,2 0 0,0 12,10A2,2 0 0,0 14,8A2,2 0 0,0 12,6M12,13C14.67,13 20,14.33 20,17V20H4V17C4,14.33 9.33,13 12,13M12,14.9C9.03,14.9 5.9,16.36 5.9,17V18.1H18.1V17C18.1,16.36 14.97,14.9 12,14.9Z"
+										/>
+									</svg> -->
+									<div class="initials">{user.userInitials}</div>
+									<div class="name">{user.userId}</div>
+									{#if muted}
+										<svg viewBox="0 0 24 24">
+											<path
+												fill="currentColor"
+												d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z"
+											/>
+										</svg>
+									{:else}
+										<svg viewBox="0 0 24 24">
+											<path
+												fill="currentColor"
+												d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"
+											/>
+										</svg>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					</div>
 				</div>
 
 				<div id="conversation" class="lb">
 					<div class="title">Conversation</div>
-					<div id="text-content" class="bg" />
+					<div id="msgContainer">
+						{#each msgs as msg}
+							{msg.username}
+							{msg.msgtime} <br />
+							{msg.msg}
+						{/each}
+					</div>
 					<div id="message">
-						<textarea id="text-send" placeholder="..." />
-						<button type="button" id="send-btn" onclick="sendIm()">
-							<svg class="svg-inline--fa fa-paper-plane fa-w-16" viewBox="0 0 512 512">
+						<textarea id="msg" bind:value={msg} placeholder="" />
+						<button type="button" id="send" on:click={sendIm}>
+							<svg viewBox="0 0 512 512">
 								<path
-									fill="currentColor"
 									d="M440 6.5L24 246.4c-34.4 19.9-31.1 70.8 5.7 85.9L144 379.6V464c0 46.4 59.2 65.5 86.6 28.6l43.8-59.1 111.9 46.2c5.9 2.4 12.1 3.6 18.3 3.6 8.2 0 16.3-2.1 23.6-6.2 12.8-7.2 21.6-20 23.9-34.5l59.4-387.2c6.1-40.1-36.9-68.8-71.5-48.9zM192 464v-64.6l36.6 15.1L192 464zm212.6-28.7l-153.8-63.5L391 169.5c10.7-15.5-9.5-33.5-23.7-21.2L155.8 332.6 48 288 464 48l-59.4 387.3z"
 								/>
 							</svg>
