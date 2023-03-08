@@ -5,7 +5,7 @@
 	import Control from '../../../lib/Control.svelte';
 	import Meter from '../../../lib/Meter.svelte';
 	// import { Face } from 'kalidokit';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	/** @type {import('./$types').PageData} */
 	export let data;
 	import {
@@ -34,7 +34,9 @@
 	let beauty = false;
 
 	let backgroundImage;
-	let gatheringContainer, controlPanel;
+	let gatheringContainer, gatheringVideos, gatheringInfo, controlPanel;
+	let gatheringVideosChildCount = 4;
+	let gatheringView = 'g gathering';
 	let column;
 	let resolution = { width: 1280, height: 720 };
 	let avTrackConstraint = {
@@ -99,6 +101,13 @@
 	// 	inputVideo.autoplay = true;
 	// 	cl(inputVideo.srcObject);
 	// };
+
+	const updateGrid = () => {
+		gatheringVideosChildCount = gatheringVideos.childElementCount;
+		gatheringVideosChildCount > 4
+			? (column = 'grid5')
+			: (column = 'grid' + gatheringVideos.childElementCount);
+	};
 
 	const sendIm = (msg, sender) => {
 		let time = new Date();
@@ -265,20 +274,20 @@
 		}
 	};
 
-	function addVideo(subscription, remotestream, username) {
+	const addVideo = (subscription, remotestream, username, origin) => {
 		// onclick="switchfullscreen(this)"
 		let divcode = `
-      <video autoplay id=${'v' + remotestream.id} >
+      <video autoplay id=${'v' + remotestream.id}>
       </video>
 			<div class="username">${username}</div>
     `;
 		let div = document.createElement('div');
 		div.setAttribute('id', 'div' + remotestream.id);
-		div.setAttribute('class', 'v');
+		div.setAttribute('class', 'v ' + origin);
 		div.innerHTML = divcode;
-		document.querySelector('#gatheringContainer').appendChild(div);
+		document.querySelector('#gatheringVideos').appendChild(div);
 		document.querySelector('#v' + remotestream.id).srcObject = subscription.stream;
-	}
+	};
 
 	const subscribeStream = (remotestream) => {
 		let videoOption = !audioOnly;
@@ -292,7 +301,14 @@
 					remotestream.addEventListener('ended', function (event) {});
 				}
 
-				addVideo(subscription, remotestream, getUserFromId(remotestream.origin).userId);
+				addVideo(
+					subscription,
+					remotestream,
+					getUserFromId(remotestream.origin).userId,
+					remotestream.origin
+				);
+
+				updateGrid();
 			},
 			(err) => {
 				cl('subscribe failed:' + err);
@@ -306,7 +322,7 @@
 		remotestream.addEventListener('updated', () => {});
 	};
 
-	function addUserListItem(user, muted) {
+	const addUserListItem = (user, muted) => {
 		let muteBtn = `<div class="muteShow" isMuted="true">
       <svg viewBox="0 0 24 24">
         <path fill="currentColor" d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" />
@@ -332,7 +348,7 @@
 		// 		'</li>'
 		// );
 		cl(user.userId + ' *** ' + muteStatus);
-	}
+	};
 
 	const getUserFromName = (name) => {
 		for (let i = 0; i < users.length; ++i) {
@@ -362,6 +378,16 @@
 		}
 		users.splice(index, 1);
 		// $('li').remove(":contains(" + id + ")");
+
+		let userdiv = document.querySelector('.' + id);
+		if (userdiv) {
+			document.querySelector('#gatheringVideos').removeChild(userdiv);
+			cl('removed .' + id);
+		} else {
+			cl('remove failed');
+		}
+
+		updateGrid();
 	};
 
 	const loadUserList = () => {
@@ -527,14 +553,9 @@
 						});
 					});
 
-					cl('222');
-
 					pauseVideoMsg = 'Your camera is turned off';
 
 					loadUserList();
-
-					cl('333');
-
 					createLocal();
 
 					for (const stream of streams) {
@@ -609,12 +630,15 @@
 		}
 	};
 
+	onDestroy(async () => {
+		stopStream();
+		(localStream = undefined), (users = []), (subList = {}), (audioOnly = false);
+		if (room) room.leave();
+	});
+
 	onMount(async () => {
 		if (browser) {
-			let gatheringContainerChildCount = gatheringContainer.childElementCount;
-			gatheringContainerChildCount > 4
-				? (column = 'grid5')
-				: (column = 'grid' + gatheringContainer.childElementCount);
+			updateGrid();
 
 			localname = new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '');
 
@@ -715,7 +739,7 @@
 	});
 </script>
 
-<div class="gathering">
+<div class={gatheringView}>
 	<Header nickname={data.nickname} />
 
 	<div class="videos">
@@ -723,20 +747,45 @@
 			<track kind="captions" />
 		</video>
 
-		<div bind:this={gatheringContainer} class={column} id="gatheringContainer">
-			<div class="v">
-				{#if pauseVideo}
-					<div class="mutediv">
-						<svg class="mutevideo" viewBox="0 0 640 512">
-							<path
-								d="M633.8 458.1l-55-42.5c15.4-1.4 29.2-13.7 29.2-31.1v-257c0-25.5-29.1-40.4-50.4-25.8L448 177.3v137.2l-32-24.7v-178c0-26.4-21.4-47.8-47.8-47.8H123.9L45.5 3.4C38.5-2 28.5-.8 23 6.2L3.4 31.4c-5.4 7-4.2 17 2.8 22.4L42.7 82 416 370.6l178.5 138c7 5.4 17 4.2 22.5-2.8l19.6-25.3c5.5-6.9 4.2-17-2.8-22.4zM32 400.2c0 26.4 21.4 47.8 47.8 47.8h288.4c11.2 0 21.4-4 29.6-10.5L32 154.7v245.5z"
-							/>
-						</svg>
-						<div class="pausevideomsg">{pauseVideoMsg}</div>
+		<div id="gatheringContainer">
+			<div bind:this={gatheringVideos} class={column} id="gatheringVideos">
+				<div class="v">
+					{#if pauseVideo}
+						<div class="mutediv">
+							<svg class="mutevideo" viewBox="0 0 640 512">
+								<path
+									d="M633.8 458.1l-55-42.5c15.4-1.4 29.2-13.7 29.2-31.1v-257c0-25.5-29.1-40.4-50.4-25.8L448 177.3v137.2l-32-24.7v-178c0-26.4-21.4-47.8-47.8-47.8H123.9L45.5 3.4C38.5-2 28.5-.8 23 6.2L3.4 31.4c-5.4 7-4.2 17 2.8 22.4L42.7 82 416 370.6l178.5 138c7 5.4 17 4.2 22.5-2.8l19.6-25.3c5.5-6.9 4.2-17-2.8-22.4zM32 400.2c0 26.4 21.4 47.8 47.8 47.8h288.4c11.2 0 21.4-4 29.6-10.5L32 154.7v245.5z"
+								/>
+							</svg>
+							<div class="pausevideomsg">{pauseVideoMsg}</div>
+						</div>
+					{/if}
+					<canvas class={pauseVideo} bind:this={outputCanvas} />
+					<div class="username">{localname}</div>
+				</div>
+			</div>
+			<div id="gatheringInfo">
+				<div id="participants">
+					<div class="title">Participants <span id="pnumber" /></div>
+					<!-- <div id="presenters">Presenters (0)</div> -->
+					<div id="user-list" class="bg" />
+				</div>
+
+				<div id="conversation" class="lb">
+					<div class="title">Conversation</div>
+					<div id="text-content" class="bg" />
+					<div id="message">
+						<textarea id="text-send" placeholder="..." />
+						<button type="button" id="send-btn" onclick="sendIm()">
+							<svg class="svg-inline--fa fa-paper-plane fa-w-16" viewBox="0 0 512 512">
+								<path
+									fill="currentColor"
+									d="M440 6.5L24 246.4c-34.4 19.9-31.1 70.8 5.7 85.9L144 379.6V464c0 46.4 59.2 65.5 86.6 28.6l43.8-59.1 111.9 46.2c5.9 2.4 12.1 3.6 18.3 3.6 8.2 0 16.3-2.1 23.6-6.2 12.8-7.2 21.6-20 23.9-34.5l59.4-387.2c6.1-40.1-36.9-68.8-71.5-48.9zM192 464v-64.6l36.6 15.1L192 464zm212.6-28.7l-153.8-63.5L391 169.5c10.7-15.5-9.5-33.5-23.7-21.2L155.8 332.6 48 288 464 48l-59.4 387.3z"
+								/>
+							</svg>
+						</button>
 					</div>
-				{/if}
-				<canvas class={pauseVideo} bind:this={outputCanvas} />
-				<div class="username">{localname}</div>
+				</div>
 			</div>
 		</div>
 

@@ -29,7 +29,7 @@
 			<h2>Gathering with Others</h2>
 			<div class="desc">
 				Connect, collaborate, and manage your work and life on the Web, powered by emerging Web APIs
-				including WebGPU and WebNN API.
+				including Windows Effects Package based Intelligent collaboration API and WebNN API.
 			</div>
 			<form on:submit|preventDefault={() => join} class="input-group">
 				<input
