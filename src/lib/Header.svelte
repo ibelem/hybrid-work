@@ -95,6 +95,10 @@
 	}
 	.signin span {
 		margin-right: 8px;
+		max-width: 180px;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 
 	@media (max-width: 576px) {

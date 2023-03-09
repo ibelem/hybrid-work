@@ -63,7 +63,8 @@
 		inferenceFpsData = 0;
 	let localPublication = null;
 	let localId = null;
-	let users = [];
+	let users = [],
+		participantId;
 	let msg = '',
 		msgs = [];
 	let muted = false;
@@ -282,6 +283,9 @@
 
 				videoList.push(vl);
 				videoList = videoList;
+				cl('subscribeStream');
+				users = users;
+				cl(users);
 				updateGrid();
 			},
 			(err) => {
@@ -323,8 +327,9 @@
 			}
 		}
 		users.splice(index, 1);
-
+		cl('deleteuser');
 		users = users;
+		cl(users);
 
 		let removeIndex = videoList.map((item) => item.remotestreamorigin).indexOf(id);
 		~removeIndex && videoList.splice(removeIndex, 1);
@@ -426,12 +431,15 @@
 		room.addEventListener('participantjoined', (event) => {
 			if (event.participant.userId !== 'user' && getUserFromId(event.participant.id) === null) {
 				users.push({
-					id: participant.id,
-					userId: participant.userId,
-					role: participant.role,
-					userInitials: initials(participant.userId)
+					id: event.participant.id,
+					userId: event.participant.userId,
+					role: event.participant.role,
+					userInitials: initials(event.participant.userId)
 				});
+
+				cl('participantjoined');
 				users = users;
+				cl(users);
 				event.participant.addEventListener('left', () => {
 					if (event.participant.id !== null && event.participant.userId !== undefined) {
 						sendIm(event.participant.userId + ' has left the room ', 'System');
@@ -499,9 +507,8 @@
 							role: participant.role,
 							userInitials: initials(participant.userId)
 						});
+						participantId = participant.id;
 					});
-
-					users = users;
 
 					pauseVideoMsg = 'Your camera is turned off';
 
@@ -513,10 +520,7 @@
 						}
 					}
 
-					cl('Streams in conference:', streams.length);
-					cl('Participants in conference: ' + resp.participants.length);
-					cl('Participants: ');
-					cl(resp.participants);
+					users = users;
 				},
 				(err) => {
 					cl(err.message);
@@ -563,6 +567,7 @@
 	};
 
 	const exitGathering = () => {
+		deleteUser(participantId);
 		stopStream();
 		(localStream = undefined), (users = []), (subList = {}), (audioOnly = false);
 		if (room) room.leave();
@@ -580,6 +585,7 @@
 	};
 
 	onDestroy(async () => {
+		deleteUser(participantId);
 		stopStream();
 		(localStream = undefined), (users = []), (subList = {}), (audioOnly = false);
 		if (room) room.leave();
@@ -727,7 +733,7 @@
 			<div id="gatheringInfo">
 				<div id="participants">
 					<div class="title">Participants <span id="usercount">({users.length})</span></div>
-					<div id="userList" class="bg">
+					<div id="userList">
 						<ul>
 							{#each users as user}
 								<li id={user.id}>
@@ -760,13 +766,17 @@
 					</div>
 				</div>
 
-				<div id="conversation" class="lb">
+				<div id="conversation">
 					<div class="title">Conversation</div>
 					<div id="msgContainer">
 						{#each msgs as msg}
-							{msg.username}
-							{msg.msgtime} <br />
-							{msg.msg}
+							<div class="msgLists">
+								<div class="msgItem">
+									<div class="name">{msg.username}</div>
+									<div class="time">{msg.msgtime}</div>
+								</div>
+								<div>{msg.msg}</div>
+							</div>
 						{/each}
 					</div>
 					<div id="message">
@@ -778,6 +788,70 @@
 								/>
 							</svg>
 						</button>
+					</div>
+				</div>
+
+				<div id="bgscontainer">
+					<div class="rb">
+						<div class="title">Change background</div>
+						<button type="button" class="close">
+							<svg class="svg-inline--fa fa-times fa-w-11" viewBox="0 0 352 512">
+								<path
+									fill="currentColor"
+									d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+								/>
+							</svg>
+						</button>
+					</div>
+					<div id="bgs">
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/00.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/01.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/02.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/03.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/04.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/05.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/06.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/07.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/08.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/09.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/10.jpg" />
+						</div>
+						<div class="bgselector">
+							<img src="../assets/img/ssbg/11.jpg" />
+						</div>
+					</div>
+					<img id="bgdefault" src="../assets/img/ssbg/0.jpg" />
+					<img id="bgpause" src="../assets/img/video/oneapi.jpg" class="dnone" />
+					<div id="bgimage">
+						<input id="bgimg" type="file" name="f" accept="image/*" class="inputfile inputf" />
+						<label for="bgimg">
+							<svg width="20" height="17" viewBox="0 0 20 17">
+								<path
+									d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"
+								/>
+							</svg>
+						</label>
 					</div>
 				</div>
 			</div>
