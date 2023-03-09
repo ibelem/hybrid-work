@@ -3,43 +3,15 @@
 	import { onMount } from 'svelte';
 	import Logo from '$lib/assets/Logo.svelte';
 	import Account from '$lib/assets/Account.svelte';
+	import { getDay, getTime } from '../js/client/utils.js';
 	let path, classname;
+	let day, time;
 	export let nickname;
-	let date = new Date();
-
-	let padNumber = (num, fill) => {
-		var len = ('' + num).length;
-		return Array(fill > len ? fill - len + 1 || 0 : 0).join(0) + num;
-	};
-
-	const week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-	const month = [
-		'Jan',
-		'Feb',
-		'Mar',
-		'Apr',
-		'May',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Oct',
-		'Nov',
-		'Dec'
-	];
-
-	$: day = week[date.getDay()];
-	$: m = month[date.getMonth()];
-	$: d = padNumber(date.getDate(), 2);
-	$: hour = padNumber(date.getHours(), 2);
-	$: min = padNumber(date.getMinutes(), 2);
-	$: sec = padNumber(date.getSeconds(), 2);
-	// $: millisec = date.getMilliseconds().toString().substring(0, 2);
-
 	onMount(() => {
 		if (browser) {
 			const interval = setInterval(() => {
-				date = new Date();
+				day = getDay();
+				time = getTime();
 			}, 60);
 			path = new URL(window.location).pathname.indexOf('/_gathering/');
 		}
@@ -57,8 +29,7 @@
 	</div>
 	<div class="info">
 		<div class="time">
-			{hour}:{min}:{sec} · {day}, {m}
-			{d}
+			{time} · {day}
 		</div>
 		<div class="signin">
 			{#if nickname}<span>{nickname}</span>{/if}

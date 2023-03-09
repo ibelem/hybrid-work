@@ -17,8 +17,15 @@
 			--white-09: rgba(255, 255, 255, 0.9);
 			--white-08: rgba(255, 255, 255, 0.8);
 			--white-06: rgba(255, 255, 255, 0.6);
+			--white-04: rgba(255, 255, 255, 0.4);
 			--white-02: rgba(255, 255, 255, 0.2);
 			--white-01: rgba(255, 255, 255, 0.1);
+			--black-01: rgba(0, 0, 0, 0.1);
+			--black-02: rgba(0, 0, 0, 0.2);
+			--black-04: rgba(0, 0, 0, 0.4);
+			--black-06: rgba(0, 0, 0, 0.6);
+			--black-08: rgba(0, 0, 0, 0.8);
+			--black-09: rgba(0, 0, 0, 0.9);
 			--energyblue: #008afa;
 			--classicblue: #3852ce;
 		}
@@ -136,19 +143,6 @@
 			min-height: 100vh;
 		}
 
-		.indicator .computepressure .first svg {
-			margin-right: 4px;
-			margin-bottom: 0px;
-		}
-
-		.indicator:hover .computepressure .first svg {
-			margin-right: 0px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			width: 40px;
-			height: 40px;
-		}
-
 		.v:hover {
 			cursor: pointer;
 		}
@@ -165,7 +159,6 @@
 			color: var(--white-08);
 			position: relative;
 			bottom: 26px;
-			max-width: 180px;
 			overflow: hidden;
 			white-space: nowrap;
 			text-overflow: ellipsis;
@@ -207,14 +200,31 @@
 
 		footer {
 			position: fixed;
-			padding-top: 24px;
+			left: 24px;
+			right: 24px;
 			bottom: 24px;
-			width: 100%;
+		}
+
+		.indicatorContainer {
+			text-align: left;
+		}
+
+		.indicator .computepressure .first svg {
+			margin-right: 4px;
+			margin-bottom: 0px;
+		}
+
+		.indicator:hover .computepressure .first svg {
+			margin-right: 0px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 40px;
+			height: 40px;
 		}
 
 		.indicator {
 			text-transform: lowercase;
-			display: flex;
+			display: inline-flex;
 			font-family: 'Exo 2';
 			justify-content: left;
 		}
@@ -245,8 +255,8 @@
 			font-size: 24px;
 			padding: 6px 0 8px 0;
 			align-items: center;
-			justify-content: center;
 			background: var(--blackbg);
+			justify-content: center;
 			color: var(--white-09);
 			letter-spacing: 0px;
 			position: relative;
@@ -300,6 +310,7 @@
 			border: 0;
 			font-size: 10px !important;
 			padding: 6px;
+			text-align: center;
 		}
 
 		.indicator .ichild:hover .title {
@@ -342,7 +353,7 @@
 
 		.g-noinfo #gatheringContainer {
 			display: grid;
-			grid-template-columns: 4fr 1fr;
+			grid-template-columns: 5fr;
 			grid-template-rows: 1fr;
 			grid-column-gap: 0px;
 			grid-row-gap: 0px;
@@ -583,6 +594,10 @@
 			padding: 0;
 		}
 
+		.grid1 canvas {
+			max-height: 66vh;
+		}
+
 		.muteShow {
 			height: 100%;
 			display: flex;
@@ -615,6 +630,11 @@
 
 		.gathering:hover #gatheringInfo>div {
 			border: 1px solid var(--white-02);
+		}
+
+		#userList,
+		#msgContainer {
+			min-height: 96px;
 		}
 
 		#userList ul {
@@ -669,7 +689,7 @@
 		#send {
 			background: transparent;
 			height: 100%;
-			padding: 12px 18px 12px 14px;
+			padding: 0px 18px 0px 14px;
 			border: 0;
 			border-left: 1px solid var(--white-01);
 		}
@@ -679,7 +699,7 @@
 		}
 
 		#send svg {
-			height: 90%;
+			height: 50%;
 		}
 
 		#send:hover {
@@ -743,7 +763,7 @@
 
 		.msgItem {
 			display: grid;
-			grid-template-columns: 3fr 1fr;
+			grid-template-columns: 3fr 2fr;
 			grid-column-gap: 10px;
 			width: 100%;
 			font-size: 0.8em;
@@ -757,11 +777,162 @@
 			max-width: 193px;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+			text-align: left;
 		}
 
 		.msgItem .time {
 			justify-self: end;
+		}
 
+		#bgs {
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr;
+			grid-column-gap: 0px;
+			grid-row-gap: 0px;
+			padding: 0 8px;
+		}
+
+		.bgselector {
+			margin: 0;
+		}
+
+		.bgselector button {
+			background-color: transparent;
+			border: 0;
+		}
+
+		.rb {
+			display: grid;
+			grid-template-columns: 9fr 1fr;
+			grid-column-gap: 0px;
+			grid-row-gap: 0px;
+			align-items: center;
+		}
+
+		.close {
+			background: transparent;
+			border: 0;
+			margin: 0;
+			width: 26px;
+			height: 26px;
+			margin-right: 10px;
+		}
+
+		.close:hover {
+			cursor: pointer;
+		}
+
+		.close svg {
+			width: 20px;
+			height: 20px;
+		}
+
+		.close svg path {
+			fill: var(--white-02);
+		}
+
+		.close:hover svg path {
+			fill: var(--white);
+		}
+
+		#bgs img {
+			max-height: 52px;
+			border-radius: 5px;
+		}
+
+		.bgselector {
+			background: transparent;
+		}
+
+		.bgselector img {
+			opacity: 0.8;
+			transition: opacity 0.35s, transform 0.35s;
+			transform: scale3d(1.09, 1, 1);
+		}
+
+		.bgselector:hover img {
+			cursor: pointer;
+			opacity: 1;
+			transform: scale3d(1.16, 1.1, 1);
+		}
+
+		#bgimage {
+			margin-bottom: 8px;
+		}
+
+		.inputfile {
+			width: 0.1px;
+			height: 0.1px;
+			opacity: 0;
+			overflow: hidden;
+			position: absolute;
+			z-index: -1;
+		}
+
+		.inputfile+label {
+			max-width: 100%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			cursor: pointer;
+			display: inline-block;
+			overflow: hidden;
+			padding: 0.25rem 1.25rem;
+		}
+
+		.inputfile:focus+label,
+		.inputfile.has-focus+label {
+			outline: 0px dotted transparent;
+		}
+
+		.inputfile+label svg {
+			width: 100%;
+			height: 1.2em;
+			vertical-align: middle;
+			fill: currentColor;
+			margin: 0;
+		}
+
+		.inputfile+label span {
+			font-size: 0.8rem;
+		}
+
+		.inputf+label {
+			color: var(--white-08);
+			border: 0px solid currentColor;
+		}
+
+		.inputf+label:hover {
+			color: var(--white);
+		}
+
+		.inputf:focus+label,
+		.inputf.has-focus+label,
+		.inputf+label:hover {
+			background-color: transparent;
+		}
+
+		#gatheringInfo #changebackground.false {
+			display: none;
+		}
+
+		#gatheringInfo #changebackground.true {
+			display: block;
+		}
+
+		#gatheringInfo #participants.false {
+			display: none;
+		}
+
+		#gatheringInfo #participants.true {
+			display: block;
+		}
+
+		#gatheringInfo #conversation.false {
+			display: none;
+		}
+
+		#gatheringInfo #conversation.true {
+			display: block;
 		}
 	</style>
 	<script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>

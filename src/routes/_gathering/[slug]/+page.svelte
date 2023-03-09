@@ -7,7 +7,8 @@
 	// import { Face } from 'kalidokit';
 	import { onMount, onDestroy } from 'svelte';
 	/** @type {import('./$types').PageData} */
-	export let data;
+	import { initials, cl, videoObject, padNumber, getDateTime } from '../../../js/client/utils.js';
+	import { bgList } from '../../../js/client/resource.js';
 	import {
 		send,
 		generateUrl,
@@ -19,13 +20,16 @@
 		pauseStream,
 		playStream
 	} from '../../../js/client/rest';
+	export let data;
 
 	let error = null;
 
 	let camera, inputVideo, outputCanvas, ctx;
 	let cW, cH;
-	let br = false;
-	let bb = false;
+	let br = false,
+		bb = false;
+	let ul = false,
+		me = false;
 	let none = 'none';
 	let pauseAudio = true,
 		pauseVideoMsg = '';
@@ -33,7 +37,7 @@
 	let audioOnly = false;
 	let beauty = false;
 
-	let backgroundImage;
+	let backgroundImage, bgInput;
 	let gatheringContainer, gatheringVideos, gatheringInfo, controlPanel;
 	let gatheringView = 'g gathering';
 	let column;
@@ -78,37 +82,42 @@
 	let remoteScreen = null;
 	let remoteScreenName = null;
 
-	const cl = (msg) => {
-		console.log(msg);
-	};
-
 	const toggleBeauty = () => {
 		beauty = !beauty;
 	};
 
-	const initials = (name) => {
-		if (name) {
-			return name
-				.replace(/[^a-zA-Z- ]/g, '')
-				.match(/\b\w/g)
-				.toString()
-				.replace(',', '')
-				.slice(0, 2);
-		} else {
-			return 'unk';
+	const updateBackgroundImage = (e) => {
+		backgroundImage.src = e.target.src;
+	};
+
+	const onFileSelected = (e) => {
+		const files = e.target.files;
+		if (files.length > 0) {
+			backgroundImage.src = URL.createObjectURL(files[0]);
 		}
 	};
 
-	const videoObject = (node, stream) => {
-		node.srcObject = stream;
-		return {
-			update(nextStream) {
-				node.srcObject = stream;
-			},
-			destroy() {
-				/* stream revoking logic here */
-			}
-		};
+	const gridSidebar = () => {
+		if (!ul && !me && !br) {
+			gatheringView = 'g-noinfo gathering';
+		} else {
+			gatheringView = 'g gathering';
+		}
+	};
+
+	const closeParticipants = () => {
+		ul = false;
+		gridSidebar();
+	};
+
+	const closeConversation = () => {
+		me = false;
+		gridSidebar();
+	};
+
+	const closeChangeBackground = () => {
+		br = false;
+		gridSidebar();
 	};
 
 	// Face.solve(facelandmarkArray, {
@@ -145,10 +154,10 @@
 		if (localname !== null) {
 			room.send(sendMsgInfo).then(
 				() => {
-					console.info(localname + 'send message successful: ' + msg);
+					cl(localname + 'send message successful: ' + msg);
 				},
 				(err) => {
-					console.error(localname + 'send failed: ' + err);
+					cl(localname + 'send failed: ' + err);
 				}
 			);
 		}
@@ -457,14 +466,7 @@
 			let receivedMsg = JSON.parse(event.message);
 			if (receivedMsg.type == 'msg') {
 				if (receivedMsg.data != undefined) {
-					let time = new Date();
-					let hour = time.getHours();
-					hour = hour > 9 ? hour.toString() : '0' + hour.toString();
-					let mini = time.getMinutes();
-					mini = mini > 9 ? mini.toString() : '0' + mini.toString();
-					let sec = time.getSeconds();
-					sec = sec > 9 ? sec.toString() : '0' + sec.toString();
-					let timeStr = hour + ':' + mini + ':' + sec;
+					let timeStr = getDateTime();
 					cl(`${user.userId} ${timeStr} ${receivedMsg.data}`);
 
 					let msg = {
@@ -594,7 +596,6 @@
 	onMount(async () => {
 		if (browser) {
 			updateGrid();
-
 			localname = decodeURI(
 				new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '')
 			);
@@ -730,9 +731,18 @@
 					</div>
 				{/each}
 			</div>
-			<div id="gatheringInfo">
-				<div id="participants">
-					<div class="title">Participants <span id="usercount">({users.length})</span></div>
+			<div id="gatheringInfo" class={gatheringInfo}>
+				<div id="participants" class={ul}>
+					<div class="rb">
+						<div class="title">Participants <span id="usercount">({users.length})</span></div>
+						<button type="button" class="close" on:click={closeParticipants}>
+							<svg viewBox="0 0 352 512">
+								<path
+									d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+								/>
+							</svg>
+						</button>
+					</div>
 					<div id="userList">
 						<ul>
 							{#each users as user}
@@ -766,8 +776,17 @@
 					</div>
 				</div>
 
-				<div id="conversation">
-					<div class="title">Conversation</div>
+				<div id="conversation" class={me}>
+					<div class="rb">
+						<div class="title">Conversation</div>
+						<button type="button" class="close" on:click={closeConversation}>
+							<svg viewBox="0 0 352 512">
+								<path
+									d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+								/>
+							</svg>
+						</button>
+					</div>
 					<div id="msgContainer">
 						{#each msgs as msg}
 							<div class="msgLists">
@@ -791,60 +810,43 @@
 					</div>
 				</div>
 
-				<div id="bgscontainer">
+				<div id="changebackground" class={br}>
 					<div class="rb">
 						<div class="title">Change background</div>
-						<button type="button" class="close">
-							<svg class="svg-inline--fa fa-times fa-w-11" viewBox="0 0 352 512">
+						<button type="button" class="close" on:click={closeChangeBackground}>
+							<svg viewBox="0 0 352 512">
 								<path
-									fill="currentColor"
 									d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
 								/>
 							</svg>
 						</button>
 					</div>
 					<div id="bgs">
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/00.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/01.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/02.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/03.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/04.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/05.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/06.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/07.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/08.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/09.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/10.jpg" />
-						</div>
-						<div class="bgselector">
-							<img src="../assets/img/ssbg/11.jpg" />
-						</div>
+						{#each bgList as bg}
+							<div class="bgselector">
+								<button type="button" on:click={updateBackgroundImage}>
+									<img src="../img/ssbg/{bg}" alt="" />
+								</button>
+							</div>
+						{/each}
 					</div>
-					<img id="bgdefault" src="../assets/img/ssbg/0.jpg" />
-					<img id="bgpause" src="../assets/img/video/oneapi.jpg" class="dnone" />
+					<img
+						bind:this={backgroundImage}
+						src="../img/ssbg/01.jpg"
+						style="display:none"
+						alt="background"
+					/>
+
 					<div id="bgimage">
-						<input id="bgimg" type="file" name="f" accept="image/*" class="inputfile inputf" />
+						<input
+							id="bgimg"
+							on:change={(e) => onFileSelected(e)}
+							bind:this={bgInput}
+							type="file"
+							name="f"
+							accept="image/*"
+							class="inputfile inputf"
+						/>
 						<label for="bgimg">
 							<svg width="20" height="17" viewBox="0 0 20 17">
 								<path
@@ -859,16 +861,10 @@
 
 		<!-- <button id="beauty" type="button" on:click={toggleBeauty}>Beauty</button> -->
 
-		<img
-			bind:this={backgroundImage}
-			src="../img/ssbg/01.jpg"
-			alt="background"
-			style="display:none"
-		/>
-
 		<div>{@html error}</div>
-
-		<footer>
+	</div>
+	<footer>
+		<div class="indicatorContainer">
 			<div class="indicator">
 				<Meter />
 				<div class="inference ichild {none}">
@@ -893,11 +889,19 @@
 					<div class="title">Inference FPS</div>
 				</div>
 			</div>
+		</div>
 
-			<div bind:this={controlPanel} style="display: none" />
-			<Control bind:bb bind:br bind:none on:click={exitGathering} on:message={handleMessage} />
-		</footer>
-	</div>
+		<div bind:this={controlPanel} style="display: none" />
+		<Control
+			bind:ul
+			bind:me
+			bind:bb
+			bind:br
+			bind:none
+			on:click={exitGathering}
+			on:message={handleMessage}
+		/>
+	</footer>
 </div>
 
 <style>

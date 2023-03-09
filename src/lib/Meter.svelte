@@ -79,7 +79,6 @@
 		padding: 6px 0 8px 0;
 		align-items: center;
 		justify-content: center;
-		background: rgba(32, 33, 36, 1);
 		color: var(--white-09);
 		letter-spacing: 0px;
 		align-content: center;
