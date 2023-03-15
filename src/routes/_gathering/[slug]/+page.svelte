@@ -26,10 +26,11 @@
 
 	let camera, inputVideo, outputCanvas, ctx;
 	let cW, cH;
-	let br = false,
-		bb = false;
-	let ul = false,
-		me = false;
+	$: br = false;
+	$: brui = false;
+	$: bb = false;
+	$: ul = false;
+	$: me = false;
 	let none = 'none';
 	let pauseAudio = true,
 		pauseVideoMsg = '';
@@ -39,7 +40,7 @@
 
 	let backgroundImage, bgInput;
 	let gatheringContainer, gatheringVideos, gatheringInfo, controlPanel;
-	let gatheringView = 'g gathering';
+	let gatheringView = 'g-none gathering';
 	let column;
 	let resolution = { width: 1280, height: 720 };
 	let avTrackConstraint = {
@@ -98,7 +99,7 @@
 	};
 
 	const gridSidebar = () => {
-		if (!ul && !me && !br) {
+		if (!ul && !me && !brui) {
 			gatheringView = 'g-noinfo gathering';
 		} else {
 			gatheringView = 'g gathering';
@@ -116,7 +117,8 @@
 	};
 
 	const closeChangeBackground = () => {
-		br = false;
+		br = true;
+		brui = false;
 		gridSidebar();
 	};
 
@@ -581,8 +583,18 @@
 	});
 
 	const handleMessage = (event) => {
-		if (event.detail.msg === 'tv') {
+		let msg = event.detail.msg;
+		if (msg === 'tv') {
 			toggleVideo();
+		} else if (msg === 'layout') {
+			if (br === true) {
+				brui = true;
+			} else if (br === false) {
+				brui = false;
+			}
+			gridSidebar();
+		} else if (msg === 'exit') {
+			exitGathering();
 		}
 	};
 
@@ -810,7 +822,7 @@
 					</div>
 				</div>
 
-				<div id="changebackground" class={br}>
+				<div id="changebackground" class={brui}>
 					<div class="rb">
 						<div class="title">Change background</div>
 						<button type="button" class="close" on:click={closeChangeBackground}>
@@ -892,15 +904,7 @@
 		</div>
 
 		<div bind:this={controlPanel} style="display: none" />
-		<Control
-			bind:ul
-			bind:me
-			bind:bb
-			bind:br
-			bind:none
-			on:click={exitGathering}
-			on:message={handleMessage}
-		/>
+		<Control bind:ul bind:me bind:bb bind:br bind:none on:message={handleMessage} />
 	</footer>
 </div>
 

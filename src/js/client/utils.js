@@ -1,11 +1,15 @@
 const initials = (name) => {
 	if (name) {
-		return name
-			.replace(/[^a-zA-Z- ]/g, '')
-			.match(/\b\w/g)
-			.toString()
-			.replace(',', '')
-			.slice(0, 2);
+		if (name.replace(/[^a-zA-Z- ]/g, '').match(/\b\w/g)) {
+			return name
+				.replace(/[^a-zA-Z- ]/g, '')
+				.match(/\b\w/g)
+				.toString()
+				.replace(',', '')
+				.slice(0, 2);
+		} else {
+			return name.toString().replace(',', '').slice(0, 1);
+		}
 	} else {
 		return 'unk';
 	}
