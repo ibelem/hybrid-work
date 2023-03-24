@@ -10,7 +10,11 @@
 		bb = false,
 		br = false,
 		none = 'none';
-	const screen = () => {};
+	const screen = () => {
+		dispatch('message', {
+			msg: 'exit-fullscreen'
+		});
+	};
 	const aU = () => {
 		au = !au;
 	};
@@ -62,13 +66,13 @@
 </script>
 
 <div class="control">
-	<!-- <button type="button" title="Exit fullscreen" on:click={screen}>
+	<button id="exitFullscreen" type="button" title="Exit fullscreen" on:click={screen}>
 		<svg viewBox="0 0 448 512">
 			<path
 				d="M436 192H312c-13.3 0-24-10.7-24-24V44c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v84h84c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm-276-24V44c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v84H12c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h124c13.3 0 24-10.7 24-24zm0 300V344c0-13.3-10.7-24-24-24H12c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h84v84c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-84h84c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12H312c-13.3 0-24 10.7-24 24v124c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12z"
 			/>
 		</svg>
-	</button> -->
+	</button>
 	<button type="button" title="Turn camera off/on" on:click={vI}>
 		{#if vi}
 			<svg viewBox="0 0 640 512">
@@ -252,10 +256,6 @@
 
 	.control button:hover svg {
 		color: white;
-	}
-
-	button.act svg path {
-		fill: rgba(204, 255, 144, 1);
 	}
 
 	button#ue {

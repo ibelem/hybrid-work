@@ -7,7 +7,14 @@
 	// import { Face } from 'kalidokit';
 	import { onMount, onDestroy } from 'svelte';
 	/** @type {import('./$types').PageData} */
-	import { initials, cl, videoObject, padNumber, getDateTime } from '../../../js/client/utils.js';
+	import {
+		initials,
+		cl,
+		videoObject,
+		getDateTime,
+		fullscreen,
+		exitFullscreen
+	} from '../../../js/client/utils.js';
 	import { bgList } from '../../../js/client/resource.js';
 	import {
 		send,
@@ -24,13 +31,14 @@
 
 	let hideError = true;
 
-	let camera, inputVideo, outputCanvas, ctx;
+	let camera, inputVideo, outputCanvas, videos, ctx;
 	let cW, cH;
 	$: br = false;
 	$: brui = false;
 	$: bb = false;
 	$: ul = true;
 	$: me = false;
+	$: fs = false;
 	let none = 'none';
 	let pauseAudio = true,
 		pauseVideoMsg = '';
@@ -82,6 +90,22 @@
 	let screenSharing = false;
 	let remoteScreen = null;
 	let remoteScreenName = null;
+
+	const removeFullClass = () => {
+		gatheringVideos.childNodes.forEach((c) => {
+			if (c.classList) {
+				c.classList.remove('full');
+			}
+		});
+	};
+
+	const fS = (e) => {
+		let canvasOrVideo = e.target.parentElement.parentElement.parentElement;
+		if (canvasOrVideo) {
+			canvasOrVideo.classList.add('full');
+		}
+		fs = fullscreen();
+	};
 
 	const toggleBeauty = () => {
 		beauty = !beauty;
@@ -618,21 +642,38 @@
 		exitGathering();
 	});
 
+	const brUi = () => {
+		if (br === true) {
+			brui = true;
+		} else if (br === false) {
+			brui = false;
+		}
+		gridSidebar();
+	};
+
 	const handleMessage = (event) => {
 		let msg = event.detail.msg;
-		if (msg === 'tv') {
-			toggleVideo();
-		} else if (msg === 'layout') {
-			if (br === true) {
-				brui = true;
-			} else if (br === false) {
-				brui = false;
-			}
-			gridSidebar();
-		} else if (msg === 'exit') {
-			exitGathering();
-		} else if (msg === 'screen-cast') {
-			shareScreen();
+
+		switch (msg) {
+			case 'tv':
+				toggleVideo();
+				break;
+			case 'layout':
+				brUi();
+				break;
+			case 'exit':
+				exitGathering();
+				break;
+			case 'screen-cast':
+				shareScreen();
+				break;
+			case 'exit-fullscreen':
+				removeFullClass();
+				exitFullscreen();
+				fs = false;
+				break;
+			default:
+				break;
 		}
 	};
 
@@ -747,7 +788,7 @@
 	});
 </script>
 
-<div class={gatheringView}>
+<div class="{gatheringView} fs-{fs}">
 	<Header nickname={data.nickname} />
 
 	<div class="videos">
@@ -769,15 +810,42 @@
 						</div>
 					{/if}
 					<canvas class={pauseVideo} bind:this={outputCanvas} />
-					<div class="username">{localname}</div>
+					<div class="bar">
+						<div class="username">
+							{localname}
+						</div>
+						<button class="enterFullscreen" type="button" on:click={fS}>
+							<svg height="48" viewBox="0 96 960 960" width="48"
+								><path
+									d="M200 856V663h60v133h133v60H200Zm0-367V296h193v60H260v133h-60Zm367 367v-60h133V663h60v193H567Zm133-367V356H567v-60h193v193h-60Z"
+								/></svg
+							></button
+						>
+					</div>
 				</div>
 
 				{#each videoList as vl}
 					<div id="div{vl.remotestreamid}" class="v {vl.remotestreamorigin}">
-						<video autoplay id="v{vl.remotestreamid}" use:videoObject={vl.subscription.stream}>
+						<video
+							bind:this={videos}
+							autoplay
+							id="v{vl.remotestreamid}"
+							use:videoObject={vl.subscription.stream}
+						>
 							<track kind="captions" />
 						</video>
-						<div class="username">{vl.username}</div>
+						<div class="bar">
+							<div class="username">
+								{vl.username}
+							</div>
+							<button class="enterFullscreen" type="button" on:click={fS}>
+								<svg height="48" viewBox="0 96 960 960" width="48"
+									><path
+										d="M200 856V663h60v133h133v60H200Zm0-367V296h193v60H260v133h-60Zm367 367v-60h133V663h60v193H567Zm133-367V356H567v-60h193v193h-60Z"
+									/></svg
+								></button
+							>
+						</div>
 					</div>
 				{/each}
 			</div>

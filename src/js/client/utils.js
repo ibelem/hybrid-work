@@ -85,6 +85,29 @@ const getTimeMillisec = () => {
 	return ` ${hour}:${min}:${sec}:${millisec}`;
 };
 
+const fullscreen = () => {
+	let fs = document.fullscreenElement && document.fullscreenElement !== null;
+
+	var docElm = document.documentElement;
+	if (!fs) {
+		if (docElm.requestFullscreen) {
+			docElm.requestFullscreen();
+		}
+	} else {
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+		}
+	}
+	fs = !fs;
+	return fs;
+};
+
+const exitFullscreen = () => {
+	if (document.exitFullscreen) {
+		document.exitFullscreen();
+	}
+};
+
 const urlFilter = () => {};
 
 export {
@@ -99,5 +122,7 @@ export {
 	getTime,
 	getTimeMillisec,
 	getDay,
+	fullscreen,
+	exitFullscreen,
 	urlFilter
 };

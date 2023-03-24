@@ -98,6 +98,11 @@
 		z-index: -1;
 	}
 
+	.fs-true.gathering .computepressure:hover .first::after {
+		background: transparent !important;
+		background-color: rgba(0, 0, 0, 0.2) !important;
+	}
+
 	.computepressure .title {
 		border: 0;
 		font-size: 10px !important;

@@ -29,14 +29,15 @@
 			<h2>Gathering with Others</h2>
 			<div class="desc">
 				Connect, collaborate, and manage your work and life on the Web, powered by emerging Web APIs
-				including Windows Effects Package based Intelligent Collaboration API and WebNN API.
+				including Compute Pressure API, Windows Effects Package based Intelligent Collaboration API
+				and WebNN API.
 			</div>
 			<form on:submit|preventDefault={() => join} class="input-group">
 				<input
 					type="text"
 					class="input"
 					bind:value={nickname}
-					placeholder="Enter a nickname"
+					placeholder="Enter your name"
 					autocomplete="off"
 				/>
 

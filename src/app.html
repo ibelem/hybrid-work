@@ -28,6 +28,8 @@
 			--black-09: rgba(0, 0, 0, 0.9);
 			--energyblue: #008afa;
 			--classicblue: #3852ce;
+			--energybluefull: rgba(0, 255, 255, 1);
+			--energybluefull-06: rgba(0, 255, 255, 0.6);
 		}
 
 		@font-face {
@@ -139,12 +141,9 @@
 			font-style: normal;
 			text-align: center;
 			margin: 0 auto;
+			overflow: hidden;
 			color: var(--black);
-			min-height: 100vh;
-		}
-
-		.v:hover {
-			cursor: pointer;
+			height: 100vh;
 		}
 
 		.v:hover svg {
@@ -155,13 +154,132 @@
 			color: var(--white) !important;
 		}
 
-		.username {
+		.bar {
 			color: var(--white-08);
 			position: relative;
-			bottom: 26px;
+			bottom: 30px;
 			overflow: hidden;
 			white-space: nowrap;
 			text-overflow: ellipsis;
+			display: grid;
+			grid-template-columns: 9fr 1fr;
+			grid-template-rows: 1fr;
+			grid-column-gap: 0px;
+			grid-row-gap: 0px;
+		}
+
+		.bar button {
+			background: transparent;
+			height: 12px;
+			border: 0;
+			cursor: pointer;
+			justify-self: right;
+			margin-right: 6px;
+		}
+
+		.bar button svg {
+			width: 20px;
+			height: 20px;
+		}
+
+		.bar button svg path {
+			fill: var(--white-08);
+		}
+
+		.bar button:hover svg path {
+			fill: var(--white) !important;
+		}
+
+		.fs-false #exitFullscreen {
+			display: none;
+		}
+
+		.fs-true .enterFullscreen {
+			display: none;
+		}
+
+		.fs-true .bar {
+			display: block;
+		}
+
+		.fs-true .full canvas,
+		.fs-true .full video {
+			position: fixed !important;
+			margin: 0;
+			left: 0;
+			bottom: 0;
+			width: 100vw !important;
+			height: 100vh !important;
+			object-fit: fill;
+			border: 0px;
+			display: block !important;
+			z-index: -1000 !important;
+			max-height: 100vh !important;
+		}
+
+		.fs-true.gathering {
+			background: transparent;
+			margin: 80px;
+			border: 1px solid var(--energybluefull-06);
+			min-height: auto !important;
+			height: calc(100vh - 160px);
+		}
+
+		.fs-true.gathering:hover {
+			border: 1px solid var(--energybluefull);
+		}
+
+		.fs-true.gathering footer {
+			left: 84px;
+			right: 84px;
+			bottom: 84px;
+		}
+
+		.fs-true.gathering .control button {
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+			background-color: rgba(0, 0, 0, 0.05) !important;
+		}
+
+		.fs-true.gathering .indicator .ichild .first {
+			background-color: rgba(0, 0, 0, 0) !important;
+		}
+
+		.fs-true.gathering .control button:hover {
+			background-color: rgba(0, 0, 0, 0.2) !important;
+			border: 2px solid var(--energybluefull) !important;
+		}
+
+		.fs-true.gathering .control button:hover svg path {
+			fill: var(--energybluefull) !important;
+		}
+
+		.fs-true.gathering #gatheringVideos {
+			display: block;
+			text-align: right;
+		}
+
+		.fs-true.gathering #gatheringVideos>div {
+			text-align: right;
+		}
+
+		.fs-true.gathering .v.full {
+			height: 0px;
+		}
+
+		.fs-true.gathering .bar {
+			display: block !important;
+			width: 160px;
+		}
+
+		.fs-true.gathering #gatheringVideos canvas,
+		.fs-true.gathering #gatheringVideos video {
+			text-align: right;
+			width: 160px;
+		}
+
+
+		.username button:hover {
+			cursor: pointer;
 		}
 
 		.v:hover .username {
@@ -276,6 +394,8 @@
 		.indicator:hover .ichild .first {
 			flex-direction: column;
 			align-items: center;
+			color: rgba(0, 255, 255, 1);
+			border: 1px solid rgba(0, 255, 255, 0.2);
 		}
 
 		.unit {
@@ -297,11 +417,6 @@
 			font-size: 40px;
 		}
 
-		.indicator:hover .ichild .first {
-			color: rgba(0, 255, 255, 1);
-			border: 1px solid rgba(0, 255, 255, 0.2);
-		}
-
 		.indicator .ichild:hover .first ::after {
 			content: '';
 			position: absolute;
@@ -312,6 +427,15 @@
 			width: calc(100% + 0px);
 			height: calc(100% + 2px);
 			z-index: -1;
+		}
+
+		.fs-true.gathering .indicatorContainer {
+			margin: 0 24px;
+		}
+
+		.fs-true.gathering .indicator .ichild:hover .first ::after {
+			background: transparent !important;
+			background-color: rgba(0, 0, 0, 0.1) !important;
 		}
 
 		.indicator .ichild .title {
@@ -946,6 +1070,7 @@
 		.inputf+label {
 			color: var(--white-08);
 			border: 0px solid currentColor;
+			margin-top: 4px;
 		}
 
 		.inputf+label:hover {
