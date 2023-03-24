@@ -22,14 +22,14 @@
 	} from '../../../js/client/rest';
 	export let data;
 
-	let error = null;
+	let hideError = true;
 
 	let camera, inputVideo, outputCanvas, ctx;
 	let cW, cH;
 	$: br = false;
 	$: brui = false;
 	$: bb = false;
-	$: ul = false;
+	$: ul = true;
 	$: me = false;
 	let none = 'none';
 	let pauseAudio = true,
@@ -40,7 +40,7 @@
 
 	let backgroundImage, bgInput;
 	let gatheringContainer, gatheringVideos, gatheringInfo, controlPanel;
-	let gatheringView = 'g-none gathering';
+	let gatheringView = 'g gathering';
 	let column;
 	let resolution = { width: 1280, height: 720 };
 	let avTrackConstraint = {
@@ -338,10 +338,6 @@
 			}
 		}
 		users.splice(index, 1);
-		cl('deleteuser');
-		users = users;
-		cl(users);
-
 		let removeIndex = videoList.map((item) => item.remotestreamorigin).indexOf(id);
 		~removeIndex && videoList.splice(removeIndex, 1);
 		videoList = videoList;
@@ -435,6 +431,15 @@
 
 			// mixStream(room, stream.id, "common");
 			stream.addEventListener('ended', () => {
+				cl(videoList);
+				let removeIndex = videoList.map((item) => {
+					item.remotestreamid == stream.id;
+				});
+				~removeIndex && videoList.splice(removeIndex, 1);
+				videoList = videoList;
+				cl(videoList);
+				// remotestreamid == stream.id
+
 				cl(stream.id + ' is ended.');
 			});
 		});
@@ -528,30 +533,61 @@
 				},
 				(err) => {
 					cl(err.message);
-					error = `
-						<div class="certmsg">
-							No remote camera stream show in page (caused by certificate in test
-							environment)?<br><br>
-
-							NET::ERR_CERT_AUTHORITY_INVALID
-
-							<ol>
-								<li>
-									Visit
-									<a href="https://10.239.115.52:8080/socket.io/?EIO=3&transport=polling">the test page</a>
-								</li>
-								<li>
-								"Your connection is not private" -&gt; Click "Advanced" button -&gt; Click "Proceed to xxx.xxx.xxx.xxx (unsafe)"
-								</li>
-								<li>Go back and refresh this page.</li>
-							</ol>
-						</div>`;
+					hideError = false;
 				}
 			);
 		});
 	};
 
 	// createOWTStream();
+
+	const shareScreen = () => {
+		let width = resolution.width,
+			height = resolution.height;
+
+		let screenSharingConfig = {
+			audio: {
+				source: 'screen-cast'
+			},
+			video: {
+				resolution: {
+					width: width,
+					height: height
+				},
+				frameRate: 20,
+				source: 'screen-cast'
+			}
+		};
+
+		Owt.Base.MediaStreamFactory.createMediaStream(screenSharingConfig).then(
+			(stream) => {
+				localScreen = new Owt.Base.LocalStream(
+					stream,
+					new Owt.Base.StreamSourceInfo('screen-cast', 'screen-cast')
+				);
+				console.info(localScreen);
+				localScreenId = localScreen.id;
+				let screenVideoTracks = localScreen.mediaStream.getVideoTracks();
+				for (const screenVideoTrack of screenVideoTracks) {
+					screenVideoTrack.addEventListener('ended', function (e) {
+						localScreenPubliction.stop();
+					});
+				}
+				room.publish(localScreen).then(
+					(publication) => {
+						console.info('-- sharescreen: publish success --');
+						localScreenPubliction = publication;
+					},
+					(err) => {
+						console.error('localsreen publish failed');
+					}
+				);
+			},
+			(err) => {
+				console.error('create localscreen failed');
+			}
+		);
+	};
 
 	const stopStream = () => {
 		if (localStream) {
@@ -595,6 +631,8 @@
 			gridSidebar();
 		} else if (msg === 'exit') {
 			exitGathering();
+		} else if (msg === 'screen-cast') {
+			shareScreen();
 		}
 	};
 
@@ -873,7 +911,25 @@
 
 		<!-- <button id="beauty" type="button" on:click={toggleBeauty}>Beauty</button> -->
 
-		<div>{@html error}</div>
+		<!-- <div>{@html error}</div> -->
+
+		<div class="certmsg {hideError}">
+			No remote camera stream show in page (caused by certificate in test environment)?<br /><br />
+
+			NET::ERR_CERT_AUTHORITY_INVALID
+
+			<ol>
+				<li>
+					Visit
+					<a href="https://10.239.115.52:8080/socket.io/?EIO=3&transport=polling">the test page</a>
+				</li>
+				<li>
+					"Your connection is not private" -&gt; Click "Advanced" button -&gt; Click "Proceed to
+					xxx.xxx.xxx.xxx (unsafe)"
+				</li>
+				<li>Go back and refresh this page.</li>
+			</ol>
+		</div>
 	</div>
 	<footer>
 		<div class="indicatorContainer">

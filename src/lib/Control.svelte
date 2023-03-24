@@ -22,6 +22,11 @@
 	};
 	const sS = () => {
 		ss = !ss;
+		if (ss) {
+			dispatch('message', {
+				msg: 'screen-cast'
+			});
+		}
 	};
 	const uL = () => {
 		ul = !ul;

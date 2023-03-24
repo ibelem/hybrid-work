@@ -180,6 +180,14 @@
 			text-align: left;
 		}
 
+		.certmsg.true {
+			display: none;
+		}
+
+		.certmsg.false {
+			display: block;
+		}
+
 		.certmsg:hover {
 			background-color: var(--energyblue);
 			border: 1px solid var(--white-01);
@@ -637,6 +645,40 @@
 			min-height: 96px;
 		}
 
+		* {
+			scrollbar-width: auto;
+			scrollbar-color: rgba(255, 255, 255, 0.4), transparent;
+		}
+
+		*::-webkit-scrollbar {
+			width: 10px;
+		}
+
+		*::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		*::-webkit-scrollbar-thumb {
+			background-color: var(--white-02);
+			border-radius: 10px;
+			border: 3px solid var(--blackbg);
+		}
+
+		*::-webkit-scrollbar-thumb:hover {
+			background-color: rgba(255, 255, 255, 0.4);
+		}
+
+		#userList,
+		#msgContainer {
+			height: 15vh;
+			overflow-y: auto;
+		}
+
+		#bgs {
+			height: 16vh;
+			overflow-y: auto;
+		}
+
 		#userList ul {
 			margin-left: -40px;
 			margin-top: 0px;
@@ -752,6 +794,7 @@
 
 		#msgContainer {
 			padding-bottom: 6px;
+			margin-bottom: 0.4em;
 		}
 
 		.msgLists {
