@@ -1,6 +1,7 @@
 <script>
 	import { browser } from '$app/environment';
 	import { beforeNavigate } from '$app/navigation';
+	import { buildWebGL2Pipeline } from '../../../js/client/webgl2/webgl2Pipeline.js';
 	import Header from '../../../lib/Header.svelte';
 	import Control from '../../../lib/Control.svelte';
 	import Meter from '../../../lib/Meter.svelte';
@@ -13,7 +14,9 @@
 		videoObject,
 		getDateTime,
 		fullscreen,
-		exitFullscreen
+		exitFullscreen,
+		getVideoFrame,
+		getInputTensor
 	} from '../../../js/client/utils.js';
 	import { bgList } from '../../../js/client/resource.js';
 	import {
@@ -62,7 +65,7 @@
 		}
 	};
 	let continueInputVideo = true;
-	let backgroundType = 'blur';
+	let backgroundType = 'image';
 
 	let room = null,
 		pc,
@@ -92,6 +95,13 @@
 	let screenSharing = false;
 	let remoteScreen = null;
 	let remoteScreenName = null;
+
+	let modelName = 'selfie_segmentation';
+	let rafReq;
+	let loadTime = 0;
+	let computeTime = 0;
+	let outputBuffer;
+	let enableWebnnDelegate = false;
 
 	const removeFullClass = () => {
 		gatheringVideos.childNodes.forEach((c) => {
@@ -384,8 +394,6 @@
 		cl('room.peerConnection');
 		cl(pc);
 		cl(processedStream);
-
-		cl('4444');
 
 		// videotransceiver = pc.addTransceiver(processedStream.getVideoTracks()[0], {
 		// 	direction: 'sendonly',
@@ -698,139 +706,156 @@
 				new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '')
 			);
 
-			const pipeline2 = buildWebGL2Pipeline(
-				inputVideo,
-				backgroundImage,
-				'none',
-				[321, 321],
-				outputCanvas,
-				null
-			);
+			const worker = new Worker('../js/tfjs/builtin_delegate_worker.js');
 
-			const postProcessingConfig2 = {
-				smoothSegmentationMask: true,
-				jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
-				coverage: [0.5, 0.75],
-				lightWrapping: 0.3,
-				blendMode: 'screen'
+			// const pipeline2 = buildWebGL2Pipeline(
+			// 	inputVideo,
+			// 	backgroundImage,
+			// 	'none',
+			// 	[321, 321],
+			// 	outputCanvas,
+			// 	null
+			// );
+
+			// const postProcessingConfig2 = {
+			// 	smoothSegmentationMask: true,
+			// 	jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
+			// 	coverage: [0.5, 0.75],
+			// 	lightWrapping: 0.3,
+			// 	blendMode: 'screen'
+			// };
+			// pipeline2.updatePostProcessingConfig(postProcessingConfig2);
+
+			// const videoCanvasOnFrame = async () => {
+			// 	if (continueInputVideo) {
+			// 		requestAnimationFrame(videoCanvasOnFrame);
+			// 		// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
+			// 		if (stream) {
+			// 			await pipeline2.render();
+			// 		}
+			// 	}
+			// };
+
+			async function postAndListenMessage(postedMessage) {
+				if (postedMessage.action == 'compute') {
+					// Transfer buffer rather than copy
+					worker.postMessage(postedMessage, [postedMessage.buffer.buffer]);
+				} else {
+					worker.postMessage(postedMessage);
+				}
+
+				const result = await new Promise((resolve) => {
+					worker.onmessage = (event) => {
+						resolve(event.data);
+					};
+				});
+				return result;
+			}
+
+			const inputOptions = {
+				mean: [127.5, 127.5, 127.5],
+				std: [127.5, 127.5, 127.5],
+				scaledFlag: false,
+				inputLayout: 'nhwc'
 			};
-			pipeline2.updatePostProcessingConfig(postProcessingConfig2);
-
-			const videoCanvasOnFrame = async () => {
-				if (continueInputVideo) {
-					requestAnimationFrame(videoCanvasOnFrame);
-					// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
-					if (stream) {
-						await pipeline2.render();
-					}
+			const modelConfigs = {
+				selfie_segmentation: {
+					inputDimensions: [1, 256, 256, 3],
+					inputResolution: [256, 256],
+					modelPath: '../../models/selfie_segmentation.tflite'
+				},
+				selfie_segmentation_landscape: {
+					inputDimensions: [1, 144, 256, 3],
+					inputResolution: [256, 144],
+					modelPath: '../../models/selfie_segmentation_landscape.tflite'
+				},
+				deeplabv3: {
+					inputDimensions: [1, 257, 257, 3],
+					inputResolution: [257, 257],
+					modelPath: '../../models/lite-model_deeplabv3_1_metadata_2.tflite'
 				}
 			};
 
+			const drawOutput = async (outputBuffer, srcElement) => {
+				if (modelName.startsWith('deeplab')) {
+					// Do additional `argMax` for DeepLabV3 model
+					outputBuffer = tf.tidy(() => {
+						const a = tf.tensor(outputBuffer, [1, 257, 257, 21], 'float32');
+						const b = tf.argMax(a, 3);
+						const c = tf.tensor(b.dataSync(), b.shape, 'float32');
+						return c.dataSync();
+					});
+				}
+				outputCanvas.width = srcElement.width;
+				outputCanvas.height = srcElement.height;
+				const pipeline = buildWebGL2Pipeline(
+					srcElement,
+					backgroundImage,
+					backgroundType,
+					inputOptions.inputResolution,
+					outputCanvas,
+					outputBuffer
+				);
+				const postProcessingConfig = {
+					smoothSegmentationMask: true,
+					jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
+					coverage: [0.5, 0.75],
+					lightWrapping: 0.3,
+					blendMode: 'screen'
+				};
+				pipeline.updatePostProcessingConfig(postProcessingConfig);
+				await pipeline.render();
+			};
+
+			const renderCamStream = async () => {
+				if (!stream.active) return;
+				// If the video element's readyState is 0, the video's width and height are 0.
+				// So check the readState here to make sure it is greater than 0.
+				if (inputVideo.readyState === 0) {
+					rafReq = requestAnimationFrame(renderCamStream);
+					return;
+				}
+				const inputCanvas = getVideoFrame(inputVideo);
+				const inputBuffer = getInputTensor(inputVideo, inputOptions);
+
+				const start = performance.now();
+				const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
+				computeTime = (performance.now() - start).toFixed(2);
+				outputBuffer = result.outputBuffer;
+				console.log(`  done in ${computeTime} ms.`);
+				await drawOutput(outputBuffer, inputCanvas);
+				inferenceFpsData = (1000 / computeTime).toFixed(0);
+				rafReq = requestAnimationFrame(renderCamStream);
+			};
+
+			const main = async () => {
+				const options = {
+					action: 'load',
+					modelPath: modelConfigs['selfie_segmentation'].modelPath,
+					enableWebNNDelegate: enableWebnnDelegate,
+					webNNDevicePreference: 0
+				};
+				loadTime = await postAndListenMessage(options);
+				await renderCamStream();
+			};
+
 			const init = async () => {
+				await tf.setBackend('wasm');
+				await tf.ready();
 				await createOWTStream();
 				continueInputVideo = true;
-				await videoCanvasOnFrame();
+				// await videoCanvasOnFrame();
 
-				ctx = outputCanvas.getContext('2d');
+				// ctx = outputCanvas.getContext('2d');
 				getProcessedStream();
 				initConference();
+
+				inputOptions.inputDimensions = modelConfigs[modelName].inputDimensions;
+				inputOptions.inputResolution = modelConfigs[modelName].inputResolution;
+				await main();
 			};
 
 			init();
-
-			// const selfieSegmentation = new SelfieSegmentation({
-			// 	locateFile: (file) => {
-			// 		cl(file);
-			// 		cl(`../models/selfie_segmentation/${file}`);
-			// 		return `../models/selfie_segmentation/${file}`;
-			// 	}
-			// });
-
-			// selfieSegmentation.setOptions({
-			// 	modelSelection: 0
-			// });
-
-			// const mediaPipeStream = () => {
-			// 	camera = new Camera(inputVideo, {
-			// 		onFrame: async () => {
-			// 			await selfieSegmentation.send({ image: inputVideo });
-			// 		},
-			// 		onSourceChanged: async () => {
-			// 			await selfieSegmentation.reset();
-			// 		},
-			// 		width: resolution.width,
-			// 		height: resolution.height
-			// 	});
-			// };
-
-			// const onBRResults = (results) => {
-			// 	cW = outputCanvas.width;
-			// 	cH = outputCanvas.height;
-			// 	// if (pauseVideo) {
-			// 	// 	ctx.drawImage(backgroundPause, 0, 0, cW, cH);
-			// 	// } else {
-			// 	if (!bb && !br) {
-			// 		ctx.drawImage(results.image, 0, 0, cW, cH);
-			// 		if (beauty) {
-			// 			ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(1px)';
-			// 		} else {
-			// 			ctx.filter = 'saturate(100%) brightness(100%) contrast(100%) blur(0px)';
-			// 		}
-			// 	} else {
-			// 		end = performance.now();
-			// 		if (start) {
-			// 			delta = end - start;
-			// 			inferenceData = delta.toFixed(1);
-			// 			inferenceFpsData = (1000.0 / delta.toFixed(1)).toFixed(0);
-			// 		}
-
-			// 		fpsControl.tick();
-
-			// 		ctx.save();
-			// 		ctx.clearRect(0, 0, cW, cH);
-			// 		ctx.drawImage(results.segmentationMask, 0, 0, cW, cH);
-
-			// 		// Only overwrite existing pixels.
-			// 		ctx.globalCompositeOperation = 'source-in';
-
-			// 		if (beauty) {
-			// 			ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(0px)';
-			// 		}
-
-			// 		ctx.drawImage(results.image, 0, 0, cW, cH);
-			// 		ctx.globalCompositeOperation = 'destination-atop';
-
-			// 		if (bb && br) {
-			// 			ctx.filter = 'blur(10px)';
-			// 			ctx.drawImage(backgroundImage, 0, 0, cW, cH);
-			// 		} else if (bb) {
-			// 			ctx.filter = 'blur(10px)';
-			// 			ctx.drawImage(results.image, 0, 0, cW, cH);
-			// 		} else if (br) {
-			// 			ctx.filter = 'blur(0px)';
-			// 			ctx.drawImage(backgroundImage, 0, 0, cW, cH);
-			// 		}
-			// 		ctx.restore();
-			// 		start = performance.now();
-			// 	}
-			// 	// }
-			// };
-
-			// selfieSegmentation.onResults(onBRResults);
-
-			// const controls = window;
-			// const fpsControl = new controls.FPS();
-			// new controls.ControlPanel(controlPanel).add([fpsControl]);
-
-			// const initMediaPipe = async () => {
-			// 	mediaPipeStream();
-			// 	ctx = outputCanvas.getContext('2d');
-			// 	await camera.start();
-			// 	getProcessedStream();
-			// 	initConference();
-			// };
-
-			// initMediaPipe();
 		}
 	});
 </script>

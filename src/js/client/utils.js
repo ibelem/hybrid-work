@@ -108,7 +108,90 @@ const exitFullscreen = () => {
 	}
 };
 
-const urlFilter = () => {};
+const getVideoFrame = (videoElement) => {
+	const canvasElement = document.createElement('canvas');
+	canvasElement.width = videoElement.videoWidth;
+	canvasElement.height = videoElement.videoHeight;
+	const canvasContext = canvasElement.getContext('2d');
+	canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+	return canvasElement;
+};
+
+const getInputTensor = (inputElement, inputOptions) => {
+	const inputDimensions = inputOptions.inputDimensions;
+	const tensor = new Float32Array(inputDimensions.slice(1).reduce((a, b) => a * b));
+
+	inputElement.width = inputElement.videoWidth || inputElement.naturalWidth;
+	inputElement.height = inputElement.videoHeight || inputElement.naturalHeight;
+
+	let [channels, height, width] = inputDimensions.slice(1);
+	const mean = inputOptions.mean || [0, 0, 0, 0];
+	const std = inputOptions.std || [1, 1, 1, 1];
+	const normlizationFlag = inputOptions.norm || false;
+	const channelScheme = inputOptions.channelScheme || 'RGB';
+	const scaledFlag = inputOptions.scaledFlag || false;
+	const inputLayout = inputOptions.inputLayout;
+	const imageChannels = 4; // RGBA
+	const drawOptions = inputOptions.drawOptions;
+	if (inputLayout === 'nhwc') {
+		[height, width, channels] = inputDimensions.slice(1);
+	}
+	const canvasElement = document.createElement('canvas');
+	canvasElement.width = width;
+	canvasElement.height = height;
+	const canvasContext = canvasElement.getContext('2d');
+
+	if (drawOptions) {
+		canvasContext.drawImage(
+			inputElement,
+			drawOptions.sx,
+			drawOptions.sy,
+			drawOptions.sWidth,
+			drawOptions.sHeight,
+			0,
+			0,
+			drawOptions.dWidth,
+			drawOptions.dHeight
+		);
+	} else {
+		if (scaledFlag) {
+			const resizeRatio = Math.max(
+				Math.max(inputElement.width / width, inputElement.height / height),
+				1
+			);
+			const scaledWidth = Math.floor(inputElement.width / resizeRatio);
+			const scaledHeight = Math.floor(inputElement.height / resizeRatio);
+			canvasContext.drawImage(inputElement, 0, 0, scaledWidth, scaledHeight);
+		} else {
+			canvasContext.drawImage(inputElement, 0, 0, width, height);
+		}
+	}
+
+	let pixels = canvasContext.getImageData(0, 0, width, height).data;
+
+	if (normlizationFlag) {
+		pixels = new Float32Array(pixels).map((p) => p / 255);
+	}
+
+	for (let c = 0; c < channels; ++c) {
+		for (let h = 0; h < height; ++h) {
+			for (let w = 0; w < width; ++w) {
+				let value;
+				if (channelScheme === 'BGR') {
+					value = pixels[h * width * imageChannels + w * imageChannels + (channels - c - 1)];
+				} else {
+					value = pixels[h * width * imageChannels + w * imageChannels + c];
+				}
+				if (inputLayout === 'nchw') {
+					tensor[c * width * height + h * width + w] = (value - mean[c]) / std[c];
+				} else {
+					tensor[h * width * channels + w * channels + c] = (value - mean[c]) / std[c];
+				}
+			}
+		}
+	}
+	return tensor;
+};
 
 export {
 	initials,
@@ -124,5 +207,6 @@ export {
 	getDay,
 	fullscreen,
 	exitFullscreen,
-	urlFilter
+	getVideoFrame,
+	getInputTensor
 };
