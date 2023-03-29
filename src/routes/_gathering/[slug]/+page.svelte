@@ -107,6 +107,14 @@
 		fs = fullscreen();
 	};
 
+	const switchFs = (e) => {
+		let canvasOrVideo = e.target.parentElement;
+		if (canvasOrVideo) {
+			removeFullClass();
+			canvasOrVideo.classList.add('full');
+		}
+	};
+
 	const toggleBeauty = () => {
 		beauty = !beauty;
 	};
@@ -809,7 +817,7 @@
 							<div class="pausevideomsg">{pauseVideoMsg}</div>
 						</div>
 					{/if}
-					<canvas class={pauseVideo} bind:this={outputCanvas} />
+					<canvas class={pauseVideo} bind:this={outputCanvas} on:click={switchFs} />
 					<div class="bar">
 						<div class="username">
 							{localname}
@@ -831,6 +839,7 @@
 							autoplay
 							id="v{vl.remotestreamid}"
 							use:videoObject={vl.subscription.stream}
+							on:click={switchFs}
 						>
 							<track kind="captions" />
 						</video>
