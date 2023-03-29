@@ -1160,10 +1160,10 @@
 			box-shadow: inset 0 0 0 200px rgba(255, 255, 255, 0.4);
 		}
 	</style>
-	<script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>
+	<!-- <script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>
 	<script src="../js/mediapipe/control_utils_local.js" crossorigin="anonymous"></script>
 	<script src="../js/mediapipe/drawing_utils.js" crossorigin="anonymous"></script>
-	<script src="../js/mediapipe/selfie_segmentation_local.js" crossorigin="anonymous"></script>
+	<script src="../js/mediapipe/selfie_segmentation_local.js" crossorigin="anonymous"></script> -->
 	%sveltekit.head%
 </head>
 
@@ -1171,6 +1171,13 @@
 	<div>%sveltekit.body%</div>
 	<script src="../js/owt/owt.js"></script>
 	<script src="../js/owt/socket.io.js"></script>
+	<script src="../js/helpers/webglHelper.js"></script>
+	<script src="../js/webgl2/backgroundBlurStage.js"></script>
+	<script src="../js/webgl2/backgroundImageStage.js"></script>
+	<script src="../js/webgl2/jointBilateralFilterStage.js"></script>
+	<script src="../js/webgl2/loadSegmentationStage.js"></script>
+	<script src="../js/webgl2/resizingStage.js"></script>
+	<script src="../js/webgl2/webgl2Pipeline.js"></script>
 </body>
 
 </html>

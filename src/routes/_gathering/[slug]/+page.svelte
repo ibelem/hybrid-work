@@ -61,7 +61,7 @@
 			source: 'camera'
 		}
 	};
-	let continueinputVideo = true;
+	let continueInputVideo = true;
 	let backgroundType = 'blur';
 
 	let room = null,
@@ -673,24 +673,6 @@
 		}
 	};
 
-	const pipeline2 = buildWebGL2Pipeline(
-		inputVideo,
-		backgroundImage,
-		'none',
-		[321, 321],
-		outputCanvas,
-		null
-	);
-
-	const postProcessingConfig2 = {
-		smoothSegmentationMask: true,
-		jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
-		coverage: [0.5, 0.75],
-		lightWrapping: 0.3,
-		blendMode: 'screen'
-	};
-	pipeline2.updatePostProcessingConfig(postProcessingConfig2);
-
 	const createOWTStream = async () => {
 		stream = await Owt.Base.MediaStreamFactory.createMediaStream(avTrackConstraint);
 		if ('srcObject' in inputVideo) {
@@ -700,16 +682,6 @@
 		}
 
 		inputVideo.autoplay = true;
-	};
-
-	const videoCanvasOnFrame = async () => {
-		if (continueinputVideo) {
-			requestAnimationFrame(videoCanvasOnFrame);
-			// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
-			if (stream) {
-				await pipeline2.render();
-			}
-		}
 	};
 
 	onDestroy(async () => {
@@ -726,12 +698,40 @@
 				new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '')
 			);
 
+			const pipeline2 = buildWebGL2Pipeline(
+				inputVideo,
+				backgroundImage,
+				'none',
+				[321, 321],
+				outputCanvas,
+				null
+			);
+
+			const postProcessingConfig2 = {
+				smoothSegmentationMask: true,
+				jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
+				coverage: [0.5, 0.75],
+				lightWrapping: 0.3,
+				blendMode: 'screen'
+			};
+			pipeline2.updatePostProcessingConfig(postProcessingConfig2);
+
+			const videoCanvasOnFrame = async () => {
+				if (continueInputVideo) {
+					requestAnimationFrame(videoCanvasOnFrame);
+					// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
+					if (stream) {
+						await pipeline2.render();
+					}
+				}
+			};
+
 			const init = async () => {
 				await createOWTStream();
-				continueinputVideo = true;
+				continueInputVideo = true;
 				await videoCanvasOnFrame();
 
-				ctx = outputcanvas.getContext('2d');
+				ctx = outputCanvas.getContext('2d');
 				getProcessedStream();
 				initConference();
 			};
@@ -764,8 +764,8 @@
 			// };
 
 			// const onBRResults = (results) => {
-			// 	cW = outputcanvas.width;
-			// 	cH = outputcanvas.height;
+			// 	cW = outputCanvas.width;
+			// 	cH = outputCanvas.height;
 			// 	// if (pauseVideo) {
 			// 	// 	ctx.drawImage(backgroundPause, 0, 0, cW, cH);
 			// 	// } else {
@@ -824,7 +824,7 @@
 
 			// const initMediaPipe = async () => {
 			// 	mediaPipeStream();
-			// 	ctx = outputcanvas.getContext('2d');
+			// 	ctx = outputCanvas.getContext('2d');
 			// 	await camera.start();
 			// 	getProcessedStream();
 			// 	initConference();
