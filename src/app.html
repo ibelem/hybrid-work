@@ -386,6 +386,10 @@
 			height: 40px;
 		}
 
+		.fs-true .indicator .computepressure:hover .first svg path {
+			fill: rgba(0, 255, 255, 1);
+		}
+
 		.indicator {
 			text-transform: lowercase;
 			display: inline-flex;
@@ -488,7 +492,7 @@
 
 		.fs-true.gathering .indicator .ichild:hover .first ::after {
 			background: transparent !important;
-			background-color: var(--black-01) !important;
+			background-color: var(--black-02) !important;
 			height: calc(100% - 0px) !important;
 		}
 
@@ -1204,6 +1208,10 @@
 			display: inline-block;
 		}
 
+		.fs-true .subinfo>div {
+			margin-right: -1px;
+		}
+
 		.fs-true .subinfo>div .content {
 			display: inline-block;
 			margin-right: 1px;
@@ -1213,7 +1221,15 @@
 		}
 
 		.fs-true .subinfo>div:hover .content {
-			background: linear-gradient(90deg, var(--black) 80%, var(--black-08) 99%, transparent 100%);
+			background: linear-gradient(90deg, var(--black) 0%, var(--black-06) 100%);
+		}
+
+		.fs-true .subinfo>div {
+			border: 1px solid var(--white-01);
+		}
+
+		.fs-true .subinfo>div:hover {
+			border: 1px solid var(--white-02);
 		}
 
 		.milsec {

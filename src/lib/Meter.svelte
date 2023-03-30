@@ -99,7 +99,7 @@
 
 	.fs-true.gathering .computepressure:hover .first::after {
 		background: transparent !important;
-		background-color: var(--black-01) !important;
+		background-color: var(--black-02) !important;
 		height: calc(100% - 0px) !important;
 	}
 
@@ -123,10 +123,6 @@
 
 	.computepressure .first svg path {
 		fill: var(--white-09);
-	}
-
-	.computepressure .first:hover svg path {
-		fill: rgba(0, 255, 255, 1);
 	}
 
 	.computepressure svg {
