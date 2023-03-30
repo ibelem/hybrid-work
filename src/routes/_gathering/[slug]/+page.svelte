@@ -824,7 +824,7 @@
 				const options = {
 					action: 'load',
 					modelPath: modelConfigs[0].modelPath,
-					enableWebNNDelegate: true,
+					enableWebNNDelegate: enableWebnnDelegate,
 					webNNDevicePreference: 0
 				};
 
