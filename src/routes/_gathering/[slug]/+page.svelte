@@ -10,6 +10,7 @@
 	/** @type {import('./$types').PageData} */
 	import {
 		initials,
+		getTimeMillisec,
 		cl,
 		videoObject,
 		getDateTime,
@@ -42,6 +43,7 @@
 	$: ul = true;
 	$: me = false;
 	$: fs = false;
+	$: millSec = '';
 	let none = 'none';
 	let pauseAudio = true,
 		pauseVideoMsg = '';
@@ -99,9 +101,19 @@
 	let modelName = 'selfie_segmentation';
 	let rafReq;
 	let loadTime = 0;
-	let computeTime = 0;
 	let outputBuffer;
 	let enableWebnnDelegate = false;
+	let interval;
+
+	const millSecInFullscreen = () => {
+		if (fs) {
+			interval = setInterval(() => {
+				millSec = getTimeMillisec();
+			}, 60);
+		} else {
+			clearInterval(interval);
+		}
+	};
 
 	const removeFullClass = () => {
 		gatheringVideos.childNodes.forEach((c) => {
@@ -117,6 +129,7 @@
 			canvasOrVideo.classList.add('full');
 		}
 		fs = fullscreen();
+		millSecInFullscreen();
 	};
 
 	const switchFs = (e) => {
@@ -675,6 +688,7 @@
 				removeFullClass();
 				exitFullscreen();
 				fs = false;
+				millSecInFullscreen();
 				break;
 			default:
 				break;
@@ -820,11 +834,10 @@
 
 				const start = performance.now();
 				const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
-				computeTime = (performance.now() - start).toFixed(2);
+				inferenceData = (performance.now() - start).toFixed(2);
 				outputBuffer = result.outputBuffer;
-				console.log(`  done in ${computeTime} ms.`);
 				await drawOutput(outputBuffer, inputCanvas);
-				inferenceFpsData = (1000 / computeTime).toFixed(0);
+				inferenceFpsData = (1000 / inferenceData).toFixed(0);
 				rafReq = requestAnimationFrame(renderCamStream);
 			};
 
@@ -835,7 +848,9 @@
 					enableWebNNDelegate: enableWebnnDelegate,
 					webNNDevicePreference: 0
 				};
+				
 				loadTime = await postAndListenMessage(options);
+				cl('loadTime: ' + loadTime);
 				await renderCamStream();
 			};
 
@@ -1085,18 +1100,16 @@
 				</div>
 				<div class="inferencefps ichild {none}">
 					<div class="fps first">
-						<div id="fps" class="fpsdata">0</div>
-						<div class="unit">fps</div>
-					</div>
-					<div class="title">Inference FPS</div>
-				</div>
-				<div class="inferencefps ichild {none}">
-					<div class="fps first">
 						<div class="fpsdata">{inferenceFpsData}</div>
 						<div class="unit">fps</div>
 					</div>
 					<div class="title">Inference FPS</div>
 				</div>
+			</div>
+			<div class="subinfo">
+				{#if fs}
+					{millSec}
+				{/if}
 			</div>
 		</div>
 

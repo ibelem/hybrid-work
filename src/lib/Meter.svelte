@@ -68,13 +68,8 @@
 </div>
 
 <style>
-	.computepressure {
-		width: 136px;
-		margin-right: 4px;
-	}
-
 	.computepressure .first {
-		border: 1px solid var(--white-01);
+		border-bottom: 1px solid var(--white-01);
 		font-size: 24px;
 		padding: 6px 0 8px 0;
 		align-items: center;
@@ -86,6 +81,10 @@
 		position: relative;
 	}
 
+	.computepressure:hover .first {
+		border-bottom: 1px solid var(--white-02);
+	}
+
 	.computepressure:hover .first::after {
 		content: '';
 		position: absolute;
@@ -94,32 +93,23 @@
 		background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
 		background-size: 100%;
 		width: calc(100% + 0px);
-		height: calc(100% + 2px);
+		height: calc(100% + 1px);
 		z-index: -1;
 	}
 
 	.fs-true.gathering .computepressure:hover .first::after {
 		background: transparent !important;
-		background-color: rgba(0, 0, 0, 0.2) !important;
-	}
-
-	.computepressure .title {
-		border: 0;
-		font-size: 10px !important;
-		padding: 6px;
-		text-transform: uppercase;
+		background-color: var(--black-01) !important;
+		height: calc(100% - 0px) !important;
 	}
 
 	.computepressure:hover .title {
-		color: rgba(0, 255, 255, 1);
+		color: var(--energybluefull);
 	}
 
 	.computepressure:hover .first {
-		color: rgba(0, 255, 255, 1);
-		border-top: 1px rgba(0, 255, 255, 0.2) solid;
-		border-left: 1px rgba(0, 255, 255, 0.2) solid;
-		border-right: 1px rgba(0, 255, 255, 0.2) solid;
 		cursor: pointer;
+		color: var(--energybluefull);
 	}
 
 	.indicator .computepressure .first {
@@ -128,9 +118,6 @@
 
 	.indicator:hover .computepressure .first {
 		flex-direction: column;
-	}
-
-	.indicator:hover .computepressure .first {
 		font-size: 12px;
 	}
 
