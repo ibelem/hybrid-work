@@ -35,8 +35,7 @@
 
 	let hideError = true;
 
-	let camera, inputVideo, outputCanvas, videos;
-	let cW, cH;
+	let inputVideo, outputCanvas, videos;
 	$: br = false;
 	$: brui = false;
 	$: bb = false;
@@ -98,11 +97,12 @@
 	let remoteScreenName = null;
 
 	let rafReq;
-	let loadTime = 0,
-		modelInfo;
+	let switchInference;
+	let loadTime = 0;
 	let outputBuffer;
 	let enableWebnnDelegate = false;
 	let interval;
+	let continueInputVideo = true;
 
 	const millSecInFullscreen = () => {
 		if (fs) {
@@ -676,6 +676,7 @@
 				break;
 			case 'layout':
 				brUi();
+				switchInference();
 				break;
 			case 'exit':
 				exitGathering();
@@ -737,6 +738,17 @@
 				return result;
 			}
 
+			const postProcessingConfig = {
+				smoothSegmentationMask: true,
+				jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
+				coverage: [0.5, 0.75],
+				lightWrapping: 0.3,
+				blendMode: 'screen'
+			};
+
+			outputCanvas.width = resolution.width;
+			outputCanvas.height = resolution.height;
+
 			const drawOutput = async (outputBuffer, srcElement) => {
 				if (modelConfigs[0].name.toLowerCase().startsWith('deeplab')) {
 					// Do additional `argMax` for DeepLabV3 model
@@ -747,8 +759,7 @@
 						return c.dataSync();
 					});
 				}
-				outputCanvas.width = srcElement.width;
-				outputCanvas.height = srcElement.height;
+
 				const pipeline = buildWebGL2Pipeline(
 					srcElement,
 					backgroundImage,
@@ -757,15 +768,31 @@
 					outputCanvas,
 					outputBuffer
 				);
-				const postProcessingConfig = {
-					smoothSegmentationMask: true,
-					jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
-					coverage: [0.5, 0.75],
-					lightWrapping: 0.3,
-					blendMode: 'screen'
-				};
+
 				pipeline.updatePostProcessingConfig(postProcessingConfig);
 				await pipeline.render();
+			};
+
+			const pipeline2 = buildWebGL2Pipeline(
+				inputVideo,
+				backgroundImage,
+				'none',
+				[321, 321],
+				outputCanvas,
+				null
+			);
+
+			pipeline2.updatePostProcessingConfig(postProcessingConfig);
+
+			const videoCanvasOnFrame = async () => {
+				if (continueInputVideo) {
+					rafReq = requestAnimationFrame(videoCanvasOnFrame);
+					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
+
+					if (stream) {
+						await pipeline2.render();
+					}
+				}
 			};
 
 			const renderCamStream = async () => {
@@ -788,7 +815,7 @@
 				rafReq = requestAnimationFrame(renderCamStream);
 			};
 
-			const main = async () => {
+			const segmentation = async () => {
 				await tf.setBackend('wasm');
 				await tf.ready();
 				inputOptions.inputDimensions = modelConfigs[0].inputDimensions;
@@ -797,21 +824,36 @@
 				const options = {
 					action: 'load',
 					modelPath: modelConfigs[0].modelPath,
-					enableWebNNDelegate: enableWebnnDelegate,
+					enableWebNNDelegate: true,
 					webNNDevicePreference: 0
 				};
 
-				modelInfo = loadTime = await postAndListenMessage(options);
+				loadTime = await postAndListenMessage(options);
 				cl('loadTime: ' + loadTime);
+				continueInputVideo = false;
 				await renderCamStream();
+			};
+
+			switchInference = async () => {
+				if (!bb && !br) {
+					backgroundType = 'none';
+					await videoCanvasOnFrame();
+				} else {
+					if (br) {
+						backgroundType = 'image';
+					} else if (bb) {
+						backgroundType = 'blur';
+					}
+					continueInputVideo = false;
+					await segmentation();
+				}
 			};
 
 			const init = async () => {
 				await createOWTStream();
 				getProcessedStream();
 				initConference();
-
-				await main();
+				await switchInference();
 			};
 
 			init();
@@ -1035,20 +1077,22 @@
 		<div class="indicatorContainer">
 			<div class="indicator">
 				<Meter />
-				<div class="inference ichild {none}">
-					<div class="time first">
-						<div bind:this={inference} id="inferencetime">{inferenceData}</div>
-						<div class="unit">ms</div>
+				{#if bb || br}
+					<div class="inference ichild {none}">
+						<div class="time first">
+							<div bind:this={inference} id="inferencetime">{inferenceData}</div>
+							<div class="unit">ms</div>
+						</div>
+						<div class="title">Inference Time</div>
 					</div>
-					<div class="title">Inference Time</div>
-				</div>
-				<div class="inferencefps ichild {none}">
-					<div class="fps first">
-						<div class="fpsdata">{inferenceFpsData}</div>
-						<div class="unit">fps</div>
+					<div class="inferencefps ichild {none}">
+						<div class="fps first">
+							<div class="fpsdata">{inferenceFpsData}</div>
+							<div class="unit">fps</div>
+						</div>
+						<div class="title">Inference FPS</div>
 					</div>
-					<div class="title">Inference FPS</div>
-				</div>
+				{/if}
 			</div>
 			<div class="subinfo">
 				<div>
@@ -1058,18 +1102,20 @@
 							{millSec}{/if}
 					</span>
 				</div>
-				<div>
-					<span class="divider" />
-					<span class="content">{modelConfigs[0].name}</span>
-				</div>
-				<div>
-					<span class="content">Loaded in {loadTime} ms</span>
-				</div>
-				<div>
-					<span class="content"
-						>{modelConfigs[0].inputDimensions.toString().replaceAll(',', 'x')}</span
-					>
-				</div>
+				{#if bb || br}
+					<div>
+						<span class="divider" />
+						<span class="content">{modelConfigs[0].name}</span>
+					</div>
+					<div>
+						<span class="content">Loaded in {loadTime} ms</span>
+					</div>
+					<div>
+						<span class="content"
+							>{modelConfigs[0].inputDimensions.toString().replaceAll(',', 'x')}</span
+						>
+					</div>
+				{/if}
 			</div>
 		</div>
 
