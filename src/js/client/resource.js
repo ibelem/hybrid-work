@@ -12,4 +12,36 @@ const bgList = [
 	'10.jpg',
 	'11.jpg'
 ];
-export { bgList };
+
+const inputOptions = {
+	mean: [127.5, 127.5, 127.5],
+	std: [127.5, 127.5, 127.5],
+	scaledFlag: false,
+	inputLayout: 'nhwc'
+};
+
+const modelConfigs = [
+	{
+		id: 1,
+		name: 'Selfie Segmentation',
+		inputDimensions: [1, 256, 256, 3],
+		inputResolution: [256, 256],
+		modelPath: '../../models/selfie_segmentation.tflite'
+	},
+	{
+		id: 2,
+		name: 'Selfie Segmentation Landscape',
+		inputDimensions: [1, 144, 256, 3],
+		inputResolution: [256, 144],
+		modelPath: '../../models/selfie_segmentation_landscape.tflite'
+	},
+	{
+		id: 3,
+		name: 'DeepLab v3',
+		inputDimensions: [1, 257, 257, 3],
+		inputResolution: [257, 257],
+		modelPath: '../../models/lite-model_deeplabv3_1_metadata_2.tflite'
+	}
+];
+
+export { bgList, inputOptions, modelConfigs };

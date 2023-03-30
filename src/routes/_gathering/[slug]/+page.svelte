@@ -19,7 +19,7 @@
 		getVideoFrame,
 		getInputTensor
 	} from '../../../js/client/utils.js';
-	import { bgList } from '../../../js/client/resource.js';
+	import { bgList, inputOptions, modelConfigs } from '../../../js/client/resource.js';
 	import {
 		send,
 		generateUrl,
@@ -35,7 +35,7 @@
 
 	let hideError = true;
 
-	let camera, inputVideo, outputCanvas, videos, ctx;
+	let camera, inputVideo, outputCanvas, videos;
 	let cW, cH;
 	$: br = false;
 	$: brui = false;
@@ -66,7 +66,6 @@
 			source: 'camera'
 		}
 	};
-	let continueInputVideo = true;
 	let backgroundType = 'image';
 
 	let room = null,
@@ -98,9 +97,9 @@
 	let remoteScreen = null;
 	let remoteScreenName = null;
 
-	let modelName = 'selfie_segmentation';
 	let rafReq;
-	let loadTime = 0;
+	let loadTime = 0,
+		modelInfo;
 	let outputBuffer;
 	let enableWebnnDelegate = false;
 	let interval;
@@ -722,34 +721,6 @@
 
 			const worker = new Worker('../js/tfjs/builtin_delegate_worker.js');
 
-			// const pipeline2 = buildWebGL2Pipeline(
-			// 	inputVideo,
-			// 	backgroundImage,
-			// 	'none',
-			// 	[321, 321],
-			// 	outputCanvas,
-			// 	null
-			// );
-
-			// const postProcessingConfig2 = {
-			// 	smoothSegmentationMask: true,
-			// 	jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
-			// 	coverage: [0.5, 0.75],
-			// 	lightWrapping: 0.3,
-			// 	blendMode: 'screen'
-			// };
-			// pipeline2.updatePostProcessingConfig(postProcessingConfig2);
-
-			// const videoCanvasOnFrame = async () => {
-			// 	if (continueInputVideo) {
-			// 		requestAnimationFrame(videoCanvasOnFrame);
-			// 		// ctx2d.drawImage(inputVideo, 0, 0, cW, cH);
-			// 		if (stream) {
-			// 			await pipeline2.render();
-			// 		}
-			// 	}
-			// };
-
 			async function postAndListenMessage(postedMessage) {
 				if (postedMessage.action == 'compute') {
 					// Transfer buffer rather than copy
@@ -766,32 +737,8 @@
 				return result;
 			}
 
-			const inputOptions = {
-				mean: [127.5, 127.5, 127.5],
-				std: [127.5, 127.5, 127.5],
-				scaledFlag: false,
-				inputLayout: 'nhwc'
-			};
-			const modelConfigs = {
-				selfie_segmentation: {
-					inputDimensions: [1, 256, 256, 3],
-					inputResolution: [256, 256],
-					modelPath: '../../models/selfie_segmentation.tflite'
-				},
-				selfie_segmentation_landscape: {
-					inputDimensions: [1, 144, 256, 3],
-					inputResolution: [256, 144],
-					modelPath: '../../models/selfie_segmentation_landscape.tflite'
-				},
-				deeplabv3: {
-					inputDimensions: [1, 257, 257, 3],
-					inputResolution: [257, 257],
-					modelPath: '../../models/lite-model_deeplabv3_1_metadata_2.tflite'
-				}
-			};
-
 			const drawOutput = async (outputBuffer, srcElement) => {
-				if (modelName.startsWith('deeplab')) {
+				if (modelConfigs[0].name.toLowerCase().startsWith('deeplab')) {
 					// Do additional `argMax` for DeepLabV3 model
 					outputBuffer = tf.tidy(() => {
 						const a = tf.tensor(outputBuffer, [1, 257, 257, 21], 'float32');
@@ -842,31 +789,28 @@
 			};
 
 			const main = async () => {
+				await tf.setBackend('wasm');
+				await tf.ready();
+				inputOptions.inputDimensions = modelConfigs[0].inputDimensions;
+				inputOptions.inputResolution = modelConfigs[0].inputResolution;
+
 				const options = {
 					action: 'load',
-					modelPath: modelConfigs['selfie_segmentation'].modelPath,
+					modelPath: modelConfigs[0].modelPath,
 					enableWebNNDelegate: enableWebnnDelegate,
 					webNNDevicePreference: 0
 				};
-				
-				loadTime = await postAndListenMessage(options);
+
+				modelInfo = loadTime = await postAndListenMessage(options);
 				cl('loadTime: ' + loadTime);
 				await renderCamStream();
 			};
 
 			const init = async () => {
-				await tf.setBackend('wasm');
-				await tf.ready();
 				await createOWTStream();
-				continueInputVideo = true;
-				// await videoCanvasOnFrame();
-
-				// ctx = outputCanvas.getContext('2d');
 				getProcessedStream();
 				initConference();
 
-				inputOptions.inputDimensions = modelConfigs[modelName].inputDimensions;
-				inputOptions.inputResolution = modelConfigs[modelName].inputResolution;
 				await main();
 			};
 
@@ -1107,9 +1051,25 @@
 				</div>
 			</div>
 			<div class="subinfo">
-				{#if fs}
-					{millSec}
-				{/if}
+				<div>
+					<span class="divider" />
+					<span class="content milsec">
+						{#if fs}
+							{millSec}{/if}
+					</span>
+				</div>
+				<div>
+					<span class="divider" />
+					<span class="content">{modelConfigs[0].name}</span>
+				</div>
+				<div>
+					<span class="content">Loaded in {loadTime} ms</span>
+				</div>
+				<div>
+					<span class="content"
+						>{modelConfigs[0].inputDimensions.toString().replaceAll(',', 'x')}</span
+					>
+				</div>
 			</div>
 		</div>
 

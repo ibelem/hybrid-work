@@ -116,7 +116,7 @@
 		flex-direction: row;
 	}
 
-	.indicator:hover .computepressure .first {
+	.fs-true .indicator .computepressure .first {
 		flex-direction: column;
 		font-size: 12px;
 	}

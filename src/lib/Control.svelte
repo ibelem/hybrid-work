@@ -230,7 +230,6 @@
 		transform: translate(-50%, -50%);
 		width: 20px;
 		height: 20px;
-		color: green;
 	}
 
 	.control button svg {
