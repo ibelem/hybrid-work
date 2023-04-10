@@ -125,6 +125,10 @@
 		fill: var(--white-09);
 	}
 
+	.computepressure:hover .first svg path {
+		fill: var(--energybluefull);
+	}
+
 	.computepressure svg {
 		width: 24px;
 		height: 24px;

@@ -54,7 +54,17 @@
 	let gatheringVideos, gatheringInfo, controlPanel;
 	let gatheringView = 'g gathering';
 	let column;
+
+	let selected = '20';
+
+	function onChange(event) {
+		selected = event.currentTarget.value;
+	}
+
+	// SD 720x480, HD 1280x720 , Full HD: 1920x1280,
+	// 2K 2048 x 1080, QHD 2560 x 1440, 4K 3840 x 2160 8K 7680 x 4320
 	let resolution = { width: 1280, height: 720 };
+
 	let avTrackConstraint = {
 		audio: {
 			source: 'mic'
@@ -97,10 +107,16 @@
 	let remoteScreenName = null;
 
 	let rafReq;
+	let models = '1',
+		isFirstTimeLoad = true,
+		modelChanged = false,
+		enableWebnnDelegate = false,
+		changeBackend,
+		changeModel;
+	let modelId = 0;
 	let switchInference;
 	let loadTime = 0;
 	let outputBuffer;
-	let enableWebnnDelegate = false;
 	let interval;
 	let continueInputVideo = true;
 
@@ -816,33 +832,46 @@
 			};
 
 			const segmentation = async () => {
-				await tf.setBackend('wasm');
-				await tf.ready();
-				inputOptions.inputDimensions = modelConfigs[0].inputDimensions;
-				inputOptions.inputResolution = modelConfigs[0].inputResolution;
+				if (isFirstTimeLoad || modelChanged) {
+					isFirstTimeLoad = false;
+					modelChanged = false;
+					const options = {
+						action: 'load',
+						modelPath: modelConfigs[modelId].modelPath,
+						enableWebNNDelegate: enableWebnnDelegate,
+						webNNDevicePreference: 0
+					};
+					loadTime = await postAndListenMessage(options);
+				}
 
-				const options = {
-					action: 'load',
-					modelPath: modelConfigs[0].modelPath,
-					enableWebNNDelegate: enableWebnnDelegate,
-					webNNDevicePreference: 0
-				};
-
-				loadTime = await postAndListenMessage(options);
-				cl('loadTime: ' + loadTime);
+				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
+				inputOptions.inputResolution = modelConfigs[modelId].inputResolution;
 				continueInputVideo = false;
 				await renderCamStream();
+			};
+
+			changeBackend = async () => {
+				enableWebnnDelegate = !enableWebnnDelegate;
+				modelChanged = true;
+				await segmentation();
+			};
+
+			changeModel = async () => {
+				cl(models);
 			};
 
 			switchInference = async () => {
 				if (!bb && !br) {
 					backgroundType = 'none';
+					continueInputVideo = true;
 					await videoCanvasOnFrame();
 				} else {
-					if (br) {
+					if (br && bb) {
 						backgroundType = 'image';
 					} else if (bb) {
 						backgroundType = 'blur';
+					} else {
+						backgroundType = 'image';
 					}
 					continueInputVideo = false;
 					await segmentation();
@@ -853,7 +882,10 @@
 				await createOWTStream();
 				getProcessedStream();
 				initConference();
-				await switchInference();
+				backgroundType = 'none';
+				await videoCanvasOnFrame();
+				await tf.setBackend('wasm');
+				await tf.ready();
 			};
 
 			init();
@@ -1114,6 +1146,91 @@
 						<span class="content"
 							>{modelConfigs[0].inputDimensions.toString().replaceAll(',', 'x')}</span
 						>
+					</div>
+					<div>{enableWebnnDelegate}</div>
+					<div>
+						<input
+							class="tgl tgl-flip"
+							id="backend"
+							on:click={changeBackend}
+							bind:checked={enableWebnnDelegate}
+							type="checkbox"
+						/>
+						<label class="tgl-btn" data-tg-off="Wasm" data-tg-on="WebNN" for="backend" />
+					</div>
+					<div class="model">
+						{selected}
+						<ul>
+							<li>
+								<input
+									type="radio"
+									checked={models === 1}
+									on:change={changeModel}
+									value="1"
+									id="m1"
+									name="mo"
+								/>
+								<label for="m1">Selfie Segmentation</label>
+
+								<div class="check" />
+							</li>
+
+							<li>
+								<input
+									type="radio"
+									checked={models === 2}
+									on:change={changeModel}
+									value="2"
+									id="m2"
+									name="mo"
+								/>
+								<label for="m2">Selfie Segmentation Landscape</label>
+
+								<div class="check"><div class="inside" /></div>
+							</li>
+
+							<li>
+								<input
+									type="radio"
+									checked={models === 3}
+									on:change={changeModel}
+									value="3"
+									id="m3"
+									name="mo"
+								/>
+								<label for="m3">DeepLab</label>
+
+								<div class="check"><div class="inside" /></div>
+							</li>
+						</ul>
+
+						<label>
+							<input
+								checked={selected === 1}
+								on:change={onChange}
+								type="radio"
+								name="amount"
+								value="1"
+							/> Selfie Segmentation
+						</label>
+						<label>
+							<input
+								checked={selected === 2}
+								on:change={onChange}
+								type="radio"
+								name="amount"
+								value="2"
+							/> Selfie Segmentation Landscape
+						</label>
+						<label>
+							<input
+								checked={selected === 3}
+								on:change={onChange}
+								type="radio"
+								name="amount"
+								value="3"
+							/> DeepLab
+						</label>
 					</div>
 				{/if}
 			</div>
