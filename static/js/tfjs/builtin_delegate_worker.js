@@ -46,6 +46,7 @@ onmessage = async (message) => {
 				}
 				modelRunner = modelRunnerResult.value();
 				const loadFinishedMs = (performance.now() - loadStart).toFixed(2);
+				console.log('load time: ', loadFinishedMs)
 				postMessage(loadFinishedMs);
 				break;
 			}
@@ -69,10 +70,7 @@ onmessage = async (message) => {
 				inputBuffer.set(message.data.buffer);
 
 				// Infer, get output tensor, and sort by logit values in reverse.
-				const inferStart = performance.now();
 				modelRunner.Infer();
-				// const inferTime = performance.now() - inferStart;
-				// console.log(`Infer time in worker: ${inferTime.toFixed(2)} ms`);
 
 				let outputBuffer = output.data();
 				outputBuffer = outputBuffer.slice(0);

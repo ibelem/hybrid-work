@@ -111,7 +111,7 @@
 		modelName = '',
 		modelConfig = '';
 	let switchInference;
-	let loadTime = 0;
+	let loadTime = '0';
 	let outputBuffer;
 	let interval;
 	let continueInputVideo = true;
