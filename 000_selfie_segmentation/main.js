@@ -218,7 +218,7 @@ export async function main() {
       // UI shows model loading progress
       await ui.showProgressComponent('current', 'pending', 'pending');
       console.log('- Loading model... ');
-      const options = {
+      const options = {s
         action: 'load',
         modelPath: modelConfigs[modelName].modelPath,
         enableWebNNDelegate: enableWebnnDelegate,

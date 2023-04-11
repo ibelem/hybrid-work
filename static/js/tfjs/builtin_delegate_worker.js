@@ -15,6 +15,8 @@ onmessage = async (message) => {
 			case 'load': {
 				if (modelRunner) {
 					modelRunner.delete();
+					modelRunner = null;
+					modelRunnerResult = null;
 				}
 				const loadStart = performance.now();
 				const modelPath = message.data.modelPath;
@@ -49,7 +51,10 @@ onmessage = async (message) => {
 			}
 			case 'compute': {
 				// Get input and output info.
-
+				if (!modelRunner) {
+					postMessage('null');
+					break;
+				}
 				const inputs = callAndDelete(modelRunner.GetInputs(), (results) =>
 					convertCppVectorToArray(results)
 				);

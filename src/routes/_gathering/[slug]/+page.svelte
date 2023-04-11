@@ -55,12 +55,6 @@
 	let gatheringView = 'g gathering';
 	let column;
 
-	let selected = '20';
-
-	function onChange(event) {
-		selected = event.currentTarget.value;
-	}
-
 	// SD 720x480, HD 1280x720 , Full HD: 1920x1280,
 	// 2K 2048 x 1080, QHD 2560 x 1440, 4K 3840 x 2160 8K 7680 x 4320
 	let resolution = { width: 1280, height: 720 };
@@ -107,13 +101,15 @@
 	let remoteScreenName = null;
 
 	let rafReq;
-	let models = '1',
+	let models = 1,
 		isFirstTimeLoad = true,
 		modelChanged = false,
 		enableWebnnDelegate = false,
 		changeBackend,
 		changeModel;
-	let modelId = 0;
+	let modelId = 0,
+		modelName = '',
+		modelConfig = '';
 	let switchInference;
 	let loadTime = 0;
 	let outputBuffer;
@@ -662,6 +658,18 @@
 		}
 	};
 
+	// Stop camera stream and cancel animation frame
+	function stopCameraStream(id, stream) {
+		cancelAnimationFrame(id);
+		// if (stream) {
+		//   stream.getTracks().forEach((track) => {
+		//     if (track.readyState === 'live' && track.kind === 'video') {
+		//       track.stop();
+		// 			track.start();
+		//     }
+		//   });
+		// }
+	}
 	const exitGathering = () => {
 		deleteUser(participantId);
 		stopStream();
@@ -824,14 +832,18 @@
 
 				const start = performance.now();
 				const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
-				inferenceData = (performance.now() - start).toFixed(2);
-				outputBuffer = result.outputBuffer;
-				await drawOutput(outputBuffer, inputCanvas);
-				inferenceFpsData = (1000 / inferenceData).toFixed(0);
+				if (result !== 'null') {
+					inferenceData = (performance.now() - start).toFixed(2);
+					outputBuffer = result.outputBuffer;
+					await drawOutput(outputBuffer, inputCanvas);
+					inferenceFpsData = (1000 / inferenceData).toFixed(0);
+				}
 				rafReq = requestAnimationFrame(renderCamStream);
 			};
 
 			const segmentation = async () => {
+				modelName = modelConfigs[modelId].name;
+				modelConfig = modelConfigs[modelId].inputDimensions.toString().replaceAll(',', 'x');
 				if (isFirstTimeLoad || modelChanged) {
 					isFirstTimeLoad = false;
 					modelChanged = false;
@@ -847,6 +859,7 @@
 				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
 				inputOptions.inputResolution = modelConfigs[modelId].inputResolution;
 				continueInputVideo = false;
+				stopCameraStream(rafReq, stream);
 				await renderCamStream();
 			};
 
@@ -856,8 +869,11 @@
 				await segmentation();
 			};
 
-			changeModel = async () => {
-				cl(models);
+			changeModel = async (event) => {
+				models = event.currentTarget.value;
+				modelId = models - 1;
+				modelChanged = true;
+				await segmentation();
 			};
 
 			switchInference = async () => {
@@ -1137,15 +1153,13 @@
 				{#if bb || br}
 					<div>
 						<span class="divider" />
-						<span class="content">{modelConfigs[0].name}</span>
+						<span class="content">{modelName}</span>
 					</div>
 					<div>
 						<span class="content">Loaded in {loadTime} ms</span>
 					</div>
 					<div>
-						<span class="content"
-							>{modelConfigs[0].inputDimensions.toString().replaceAll(',', 'x')}</span
-						>
+						<span class="content">{modelConfig}</span>
 					</div>
 					<div>{enableWebnnDelegate}</div>
 					<div>
@@ -1158,56 +1172,11 @@
 						/>
 						<label class="tgl-btn" data-tg-off="Wasm" data-tg-on="WebNN" for="backend" />
 					</div>
-					<div class="model">
-						{selected}
-						<ul>
-							<li>
-								<input
-									type="radio"
-									checked={models === 1}
-									on:change={changeModel}
-									value="1"
-									id="m1"
-									name="mo"
-								/>
-								<label for="m1">Selfie Segmentation</label>
-
-								<div class="check" />
-							</li>
-
-							<li>
-								<input
-									type="radio"
-									checked={models === 2}
-									on:change={changeModel}
-									value="2"
-									id="m2"
-									name="mo"
-								/>
-								<label for="m2">Selfie Segmentation Landscape</label>
-
-								<div class="check"><div class="inside" /></div>
-							</li>
-
-							<li>
-								<input
-									type="radio"
-									checked={models === 3}
-									on:change={changeModel}
-									value="3"
-									id="m3"
-									name="mo"
-								/>
-								<label for="m3">DeepLab</label>
-
-								<div class="check"><div class="inside" /></div>
-							</li>
-						</ul>
-
+					<div class="model m_{models}">
 						<label>
 							<input
-								checked={selected === 1}
-								on:change={onChange}
+								checked={models === 1}
+								on:change={changeModel}
 								type="radio"
 								name="amount"
 								value="1"
@@ -1215,8 +1184,8 @@
 						</label>
 						<label>
 							<input
-								checked={selected === 2}
-								on:change={onChange}
+								checked={models === 2}
+								on:change={changeModel}
 								type="radio"
 								name="amount"
 								value="2"
@@ -1224,8 +1193,8 @@
 						</label>
 						<label>
 							<input
-								checked={selected === 3}
-								on:change={onChange}
+								checked={models === 3}
+								on:change={changeModel}
 								type="radio"
 								name="amount"
 								value="3"

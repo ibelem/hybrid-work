@@ -1274,8 +1274,8 @@
 		.tgl+.tgl-btn {
 			outline: 0;
 			display: block;
-			width: 4em;
-			height: 1.2em;
+			width: 40px;
+			height: 20px;
 			position: relative;
 			cursor: pointer;
 			-webkit-user-select: none;
@@ -1307,7 +1307,7 @@
 
 
 		.tgl-flip+.tgl-btn {
-			padding: 4px;
+			padding: 2px 8px;
 			transition: all 0.2s ease;
 			font-family: sans-serif;
 			perspective: 100px;
@@ -1331,7 +1331,7 @@
 
 		.tgl-flip+.tgl-btn:after {
 			content: attr(data-tg-on);
-			background: var(--energybluefull);
+			background: #0DFF92;
 			transform: rotateY(-180deg);
 		}
 
@@ -1358,31 +1358,39 @@
 			transform: rotateY(20deg);
 		}
 
-		.model ul {
-			display: inline-block;
-			margin-left: -40px;
-		}
-
-		.model ul li {
-			display: inline-block;
-		}
-
-		.model ul li input[type=radio] {
+		.model input[type=radio] {
 			position: absolute;
 			visibility: hidden;
 		}
 
-		.model ul li label {
+		.model label {
 			display: inline-block;
 			cursor: pointer;
-			-webkit-transition: all 0.25s linear;
+			transition: all 0.25s linear;
+			padding: 2px 8px;
+			border: 1px solid var(--white-01);
 		}
 
-		.model ul li:hover label {
-			color: #FFFFFF;
+		.model label:hover {
+			border: 1px solid var(--white-02);
+			background: #0DFF92;
+			color: #000;
 		}
 
-		.model ul li .check {
+		.model.m_1 label:first-child {
+			background: rgba(255, 31, 122, 1);
+		}
+
+		.model.m_2 label:nth-child(even) {
+			background: rgba(255, 31, 122, 1);
+		}
+
+		.model.m_3 label:last-child {
+			background: rgba(255, 31, 122, 1);
+		}
+
+
+		.model .check {
 			display: block;
 			position: absolute;
 			border: 5px solid #AAAAAA;
@@ -1397,11 +1405,11 @@
 			display: none;
 		}
 
-		.model ul li:hover .check {
+		.model:hover .check {
 			border: 5px solid #FFFFFF;
 		}
 
-		.model ul li .check::before {
+		.model .check::before {
 			display: block;
 			position: absolute;
 			content: '';
