@@ -1179,8 +1179,8 @@
 
 			<ol>
 				<li>
-					Visit
-					<a href="https://10.239.115.52:8080/socket.io/?EIO=3&transport=polling">the test page</a>
+					Visit https://&lt;url value in config.json, port is :8080 instead of
+					:3000&gt;/socket.io/?EIO=3&transport=polling
 				</li>
 				<li>
 					"Your connection is not private" -&gt; Click "Advanced" button -&gt; Click "Proceed to
