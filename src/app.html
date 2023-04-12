@@ -1251,16 +1251,6 @@
 			box-sizing: border-box;
 		}
 
-		.tgl::-moz-selection,
-		.tgl:after::-moz-selection,
-		.tgl:before::-moz-selection,
-		.tgl *::-moz-selection,
-		.tgl *:after::-moz-selection,
-		.tgl *:before::-moz-selection,
-		.tgl+.tgl-btn::-moz-selection {
-			background: none;
-		}
-
 		.tgl::selection,
 		.tgl:after::selection,
 		.tgl:before::selection,
@@ -1274,8 +1264,8 @@
 		.tgl+.tgl-btn {
 			outline: 0;
 			display: block;
-			width: 40px;
-			height: 20px;
+			width: 60px;
+			height: 18px;
 			position: relative;
 			cursor: pointer;
 			-webkit-user-select: none;
@@ -1305,12 +1295,9 @@
 			left: 50%;
 		}
 
-
 		.tgl-flip+.tgl-btn {
-			padding: 2px 8px;
+			margin: 0 0 -3.5px 0;
 			transition: all 0.2s ease;
-			font-family: sans-serif;
-			perspective: 100px;
 		}
 
 		.tgl-flip+.tgl-btn:after,
@@ -1320,7 +1307,6 @@
 			width: 100%;
 			text-align: center;
 			position: absolute;
-			font-weight: bold;
 			color: #fff;
 			position: absolute;
 			top: 0;
@@ -1332,11 +1318,14 @@
 		.tgl-flip+.tgl-btn:after {
 			content: attr(data-tg-on);
 			background: #0DFF92;
+			padding: 3px 0 0 0;
+			color: #000;
 			transform: rotateY(-180deg);
 		}
 
 		.tgl-flip+.tgl-btn:before {
 			background: rgba(255, 31, 122, 1);
+			padding: 3px 0 0 0;
 			content: attr(data-tg-off);
 		}
 
@@ -1351,7 +1340,8 @@
 		.tgl-flip:checked+.tgl-btn:after {
 			transform: rotateY(0);
 			left: 0;
-			background: var(--energybluefull);
+			color: #000;
+			background: #0DFF92;
 		}
 
 		.tgl-flip:checked+.tgl-btn:active:after {

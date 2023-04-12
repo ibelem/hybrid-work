@@ -46,7 +46,7 @@ onmessage = async (message) => {
 				}
 				modelRunner = modelRunnerResult.value();
 				const loadFinishedMs = (performance.now() - loadStart).toFixed(2);
-				console.log('load time: ', loadFinishedMs)
+				console.log('load time: ', loadFinishedMs);
 				postMessage(loadFinishedMs);
 				break;
 			}

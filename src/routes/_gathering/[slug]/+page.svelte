@@ -69,7 +69,7 @@
 			source: 'camera'
 		}
 	};
-	let backgroundType = 'image';
+	let backgroundType = 'none';
 
 	let room = null,
 		pc,
@@ -112,10 +112,11 @@
 		modelName = '',
 		modelConfig = '';
 	let switchInference;
-	let loadTime = '0';
+	let loadTime = '';
 	let outputBuffer;
 	let interval;
 	let continueInputVideo = true;
+	let segmentation, segmentSemantic, renderCamStream;
 
 	const millSecInFullscreen = () => {
 		if (fs) {
@@ -403,8 +404,8 @@
 
 	const getProcessedStream = () => {
 		processedStream = outputCanvas.captureStream();
-		//   const audiotrack = stream.getAudioTracks()[0];
-		//   processedStream.addTrack(audiotrack);
+		// const audiotrack = stream.getAudioTracks()[0];
+		// processedStream.addTrack(audiotrack);
 	};
 
 	let createLocal = async () => {
@@ -769,7 +770,7 @@
 			outputCanvas.height = resolution.height;
 
 			const drawOutput = async (outputBuffer, srcElement) => {
-				if (modelName.startsWith('DeepLab') && outputBuffer) {
+				if (modelName.toLowerCase().startsWith('deeplab') && outputBuffer) {
 					// Do additional `argMax` for DeepLabV3 model
 					outputBuffer = tf.tidy(() => {
 						const a = tf.tensor(outputBuffer, [1, 257, 257, 21], 'float32');
@@ -807,45 +808,46 @@
 				if (continueInputVideo) {
 					requestAnimationFrame(videoCanvasOnFrame);
 					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
-
 					if (stream) {
 						await pipeline2.render();
 					}
 				}
 			};
 
-      const segmentSemantic = () => {
-        return async (videoFrame, controller) => {
-          const inputBuffer = getInputTensor(videoFrame, inputOptions);
-          const start = performance.now();
-          const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
-          if (result !== 'null') {
-            inferenceData = (performance.now() - start).toFixed(2);
-            outputBuffer = result.outputBuffer;
-            await drawOutput(outputBuffer, videoFrame);
-            inferenceFpsData = (1000 / inferenceData).toFixed(0);
-          }
+			segmentSemantic = () => {
+				return async (videoFrame, controller) => {
+					if (bb || br) {
+						const inputBuffer = getInputTensor(videoFrame, inputOptions);
+						const start = performance.now();
+						const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
+						if (result !== 'null') {
+							inferenceData = (performance.now() - start).toFixed(2);
+							outputBuffer = result.outputBuffer;
+							await drawOutput(outputBuffer, videoFrame);
+							inferenceFpsData = (1000 / inferenceData).toFixed(0);
+						}
+						cl('computing: ++++++++++');
+					}
+					const frame_from_canvas = new VideoFrame(outputCanvas, { timestamp: 0 });
+					videoFrame.close();
+					controller.enqueue(frame_from_canvas);
+				};
+			};
 
-          const frame_from_canvas = new VideoFrame(outputCanvas, {timestamp: 0});
-          videoFrame.close();
-          controller.enqueue(frame_from_canvas);
-        };
-      };
-
-			const renderCamStream = async () => {
+			renderCamStream = async () => {
 				const videoTrack = stream.getVideoTracks()[0];
-				const processor = new MediaStreamTrackProcessor({track: videoTrack});
-				const generator = new MediaStreamTrackGenerator({kind: 'video'});
+				const processor = new MediaStreamTrackProcessor({ track: videoTrack });
+				const generator = new MediaStreamTrackGenerator({ kind: 'video' });
 
-			  const source = processor.readable;
-  			const sink = generator.writable;
+				const source = processor.readable;
+				const sink = generator.writable;
 
-  			const transformer = new TransformStream({transform: segmentSemantic()});
+				const transformer = new TransformStream({ transform: segmentSemantic() });
 
 				abortController = new AbortController();
-  			const signal = abortController.signal;
+				const signal = abortController.signal;
 
-  			const popeThroughPromise = source.pipeThrough(transformer, {signal}).pipeTo(sink);
+				const popeThroughPromise = source.pipeThrough(transformer, { signal }).pipeTo(sink);
 
 				popeThroughPromise.catch((e) => {
 					if (signal.aborted) {
@@ -857,12 +859,10 @@
 					sink.abort(e);
 				});
 
-				processedStream = new MediaStream();
 				processedStream.addTrack(generator);
-				inputVideo.srcObject = processedStream;
 			};
 
-			const segmentation = async () => {
+			segmentation = async () => {
 				if (modelName != '') abortTransform();
 				modelName = modelConfigs[modelId].name;
 				modelConfig = modelConfigs[modelId].inputDimensions.toString().replaceAll(',', 'x');
@@ -875,7 +875,12 @@
 						enableWebNNDelegate: enableWebnnDelegate,
 						webNNDevicePreference: 0
 					};
-					loadTime = await postAndListenMessage(options);
+					let lt = await postAndListenMessage(options);
+					if (typeof lt === 'string') {
+						loadTime = `in ${lt} ms`;
+					} else {
+						loadTime = '';
+					}
 				}
 
 				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
@@ -902,38 +907,54 @@
 					backgroundType = 'none';
 					continueInputVideo = true;
 					await videoCanvasOnFrame();
+					cl('///++++');
+					cl(`br: ${br}, bblur: ${bb}`);
 				} else {
 					if (br && bb) {
+						cl('///000');
+						cl(`br: ${br}, bblur: ${bb}`);
 						backgroundType = 'image';
 					} else if (bb) {
+						cl('///111');
+						cl(`br: ${br}, bblur: ${bb}`);
 						backgroundType = 'blur';
-					} else {
+					} else if (br) {
+						cl('///222');
+						cl(`br: ${br}, bblur: ${bb}`);
 						backgroundType = 'image';
+					} else {
+						cl('///===');
+						cl(`br: ${br}, bblur: ${bb}`);
 					}
+
 					continueInputVideo = false;
 					await segmentation();
 				}
 			};
 
-      const checkMediaStreamTrackSupport = () => {
-        // Global MediaStreamTrackProcessor, MediaStreamTrackGenerator, VideoFrame.
-        if (typeof MediaStreamTrackProcessor === 'undefined' ||
-          typeof MediaStreamTrackGenerator === 'undefined') {
-          console.error('Your browser does not support the MediaStreamTrack API for Insertable Streams of Media.');
-        }
-        try {
-          new MediaStreamTrackGenerator('video');
-          console.log('Video insertable streams supported.');
-        } catch (e) {
-          console.error('Your browser does not support insertable video streams.');
-        }
-        if (typeof VideoFrame === 'undefined') {
-          console.error('Your browser does not support WebCodecs.');
-        }
-      };
+			const verifyMediaStreamTrack = () => {
+				// Global MediaStreamTrackProcessor, MediaStreamTrackGenerator, VideoFrame.
+				if (
+					typeof MediaStreamTrackProcessor === 'undefined' ||
+					typeof MediaStreamTrackGenerator === 'undefined'
+				) {
+					console.error(
+						'Your browser does not support the MediaStreamTrack API for Insertable Streams of Media.'
+					);
+				}
+				try {
+					new MediaStreamTrackGenerator('video');
+					console.log('Video insertable streams supported.');
+				} catch (e) {
+					console.error('Your browser does not support insertable video streams.');
+				}
+				if (typeof VideoFrame === 'undefined') {
+					console.error('Your browser does not support WebCodecs.');
+				}
+			};
 
 			const init = async () => {
-				checkMediaStreamTrackSupport();
+				verifyMediaStreamTrack();
 				await createOWTStream();
 				getProcessedStream();
 				initConference();
@@ -1195,22 +1216,12 @@
 						<span class="content">{modelName}</span>
 					</div>
 					<div>
-						<span class="content">Loaded in {loadTime} ms</span>
+						<span class="content">Loaded {loadTime}</span>
 					</div>
 					<div>
 						<span class="content">{modelConfig}</span>
 					</div>
-					<div>{enableWebnnDelegate}</div>
-					<div>
-						<input
-							class="tgl tgl-flip"
-							id="backend"
-							on:click={changeBackend}
-							bind:checked={enableWebnnDelegate}
-							type="checkbox"
-						/>
-						<label class="tgl-btn" data-tg-off="Wasm" data-tg-on="WebNN" for="backend" />
-					</div>
+
 					<div class="model m_{models}">
 						<label>
 							<input
@@ -1239,6 +1250,16 @@
 								value="3"
 							/> DeepLab
 						</label>
+					</div>
+					<div>
+						<input
+							class="tgl tgl-flip"
+							id="backend"
+							on:click={changeBackend}
+							bind:checked={enableWebnnDelegate}
+							type="checkbox"
+						/>
+						<label class="tgl-btn" data-tg-off="Wasm" data-tg-on="WebNN" for="backend" />
 					</div>
 				{/if}
 			</div>
