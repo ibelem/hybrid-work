@@ -121,8 +121,8 @@ const getInputTensor = (inputElement, inputOptions) => {
 	const inputDimensions = inputOptions.inputDimensions;
 	const tensor = new Float32Array(inputDimensions.slice(1).reduce((a, b) => a * b));
 
-	inputElement.width = inputElement.videoWidth || inputElement.naturalWidth;
-	inputElement.height = inputElement.videoHeight || inputElement.naturalHeight;
+	inputElement.width = inputElement.videoWidth || inputElement.naturalWidth || inputElement.displayWidth;
+	inputElement.height = inputElement.videoHeight || inputElement.naturalHeight || inputElement.displayHeight;
 
 	let [channels, height, width] = inputDimensions.slice(1);
 	const mean = inputOptions.mean || [0, 0, 0, 0];

@@ -100,7 +100,8 @@
 	let remoteScreen = null;
 	let remoteScreenName = null;
 
-	let rafReq;
+	// An AbortController used to stop the transform.
+	let abortController = null;
 	let models = 1,
 		isFirstTimeLoad = true,
 		modelChanged = false,
@@ -658,18 +659,12 @@
 		}
 	};
 
-	// Stop camera stream and cancel animation frame
-	function stopCameraStream(id, stream) {
-		cancelAnimationFrame(id);
-		// if (stream) {
-		//   stream.getTracks().forEach((track) => {
-		//     if (track.readyState === 'live' && track.kind === 'video') {
-		//       track.stop();
-		// 			track.start();
-		//     }
-		//   });
-		// }
-	}
+	// Abort Transform
+	const abortTransform = () => {
+		abortController.abort();
+		abortController = null;
+	};
+
 	const exitGathering = () => {
 		deleteUser(participantId);
 		stopStream();
@@ -774,7 +769,7 @@
 			outputCanvas.height = resolution.height;
 
 			const drawOutput = async (outputBuffer, srcElement) => {
-				if (modelConfigs[0].name.toLowerCase().startsWith('deeplab')) {
+				if (modelName.startsWith('DeepLab') && outputBuffer) {
 					// Do additional `argMax` for DeepLabV3 model
 					outputBuffer = tf.tidy(() => {
 						const a = tf.tensor(outputBuffer, [1, 257, 257, 21], 'float32');
@@ -810,7 +805,7 @@
 
 			const videoCanvasOnFrame = async () => {
 				if (continueInputVideo) {
-					rafReq = requestAnimationFrame(videoCanvasOnFrame);
+					requestAnimationFrame(videoCanvasOnFrame);
 					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
 
 					if (stream) {
@@ -819,29 +814,56 @@
 				}
 			};
 
-			const renderCamStream = async () => {
-				if (!stream.active) return;
-				// If the video element's readyState is 0, the video's width and height are 0.
-				// So check the readState here to make sure it is greater than 0.
-				if (inputVideo.readyState === 0) {
-					rafReq = requestAnimationFrame(renderCamStream);
-					return;
-				}
-				const inputCanvas = getVideoFrame(inputVideo);
-				const inputBuffer = getInputTensor(inputVideo, inputOptions);
+      const segmentSemantic = () => {
+        return async (videoFrame, controller) => {
+          const inputBuffer = getInputTensor(videoFrame, inputOptions);
+          const start = performance.now();
+          const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
+          if (result !== 'null') {
+            inferenceData = (performance.now() - start).toFixed(2);
+            outputBuffer = result.outputBuffer;
+            await drawOutput(outputBuffer, videoFrame);
+            inferenceFpsData = (1000 / inferenceData).toFixed(0);
+          }
 
-				const start = performance.now();
-				const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
-				if (result !== 'null') {
-					inferenceData = (performance.now() - start).toFixed(2);
-					outputBuffer = result.outputBuffer;
-					await drawOutput(outputBuffer, inputCanvas);
-					inferenceFpsData = (1000 / inferenceData).toFixed(0);
-				}
-				rafReq = requestAnimationFrame(renderCamStream);
+          const frame_from_canvas = new VideoFrame(outputCanvas, {timestamp: 0});
+          videoFrame.close();
+          controller.enqueue(frame_from_canvas);
+        };
+      };
+
+			const renderCamStream = async () => {
+				const videoTrack = stream.getVideoTracks()[0];
+				const processor = new MediaStreamTrackProcessor({track: videoTrack});
+				const generator = new MediaStreamTrackGenerator({kind: 'video'});
+
+			  const source = processor.readable;
+  			const sink = generator.writable;
+
+  			const transformer = new TransformStream({transform: segmentSemantic()});
+
+				abortController = new AbortController();
+  			const signal = abortController.signal;
+
+  			const popeThroughPromise = source.pipeThrough(transformer, {signal}).pipeTo(sink);
+
+				popeThroughPromise.catch((e) => {
+					if (signal.aborted) {
+						console.log('Shutting down streams after abort.');
+					} else {
+						console.error('Error from stream transform:', e);
+					}
+					source.cancel(e);
+					sink.abort(e);
+				});
+
+				processedStream = new MediaStream();
+				processedStream.addTrack(generator);
+				inputVideo.srcObject = processedStream;
 			};
 
 			const segmentation = async () => {
+				if (modelName != '') abortTransform();
 				modelName = modelConfigs[modelId].name;
 				modelConfig = modelConfigs[modelId].inputDimensions.toString().replaceAll(',', 'x');
 				if (isFirstTimeLoad || modelChanged) {
@@ -859,7 +881,6 @@
 				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
 				inputOptions.inputResolution = modelConfigs[modelId].inputResolution;
 				continueInputVideo = false;
-				stopCameraStream(rafReq, stream);
 				await renderCamStream();
 			};
 
@@ -894,7 +915,25 @@
 				}
 			};
 
+      const checkMediaStreamTrackSupport = () => {
+        // Global MediaStreamTrackProcessor, MediaStreamTrackGenerator, VideoFrame.
+        if (typeof MediaStreamTrackProcessor === 'undefined' ||
+          typeof MediaStreamTrackGenerator === 'undefined') {
+          console.error('Your browser does not support the MediaStreamTrack API for Insertable Streams of Media.');
+        }
+        try {
+          new MediaStreamTrackGenerator('video');
+          console.log('Video insertable streams supported.');
+        } catch (e) {
+          console.error('Your browser does not support insertable video streams.');
+        }
+        if (typeof VideoFrame === 'undefined') {
+          console.error('Your browser does not support WebCodecs.');
+        }
+      };
+
 			const init = async () => {
+				checkMediaStreamTrackSupport();
 				await createOWTStream();
 				getProcessedStream();
 				initConference();
