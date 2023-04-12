@@ -38,6 +38,18 @@
 			--energybluefull-06: rgba(0, 255, 255, 0.6);
 			--energybluefull-02: rgba(0, 255, 255, 0.4);
 			--energybluefull-02: rgba(0, 255, 255, 0.2);
+			--pink: rgba(255, 31, 122, 1);
+			--pink-08: rgba(255, 31, 122, 0.8);
+			--pink-06: rgba(255, 31, 122, 0.6);
+			--pink-04: rgba(255, 31, 122, 0.4);
+			--pink-02: rgba(255, 31, 122, 0.2);
+			--pink-01: rgba(255, 31, 122, 0.1);
+			--green: rgba(13, 255, 146, 1);
+			--green-08: rgba(13, 255, 146, 0.8);
+			--green-06: rgba(13, 255, 146, 0.6);
+			--green-04: rgba(13, 255, 146, 0.4);
+			--green-02: rgba(13, 255, 146, 0.2);
+			--green-01: rgba(13, 255, 146, 0.1);
 		}
 
 		@font-face {
@@ -418,6 +430,10 @@
 			border: 1px solid var(--white-01);
 		}
 
+		.fs-true.gathering .indicator .ichild {
+			width: 146px;
+		}
+
 		.indicator .ichild:last-child {
 			margin-right: 0;
 		}
@@ -447,11 +463,11 @@
 		.fs-true .indicator .ichild .first {
 			flex-direction: column;
 			align-items: center;
+			padding: 12px 0;
 		}
 
-		.fs-true .indicator .ichild .first #inferencetime,
-		.fs-true .indicator .ichild .first .fpsdata {
-			font-size: 40px;
+		.fs-true .indicator .ichild .first .if {
+			font-size: 32px;
 		}
 
 		.indicator .ichild:hover .first {
@@ -1200,7 +1216,7 @@
 			width: 3px;
 			margin-bottom: -9px;
 			margin-right: -3px;
-			background: rgba(255, 31, 122, 1);
+			background: var(--pink);
 		}
 
 		.subinfo>div {
@@ -1217,21 +1233,39 @@
 			padding: 6px 12px;
 			-webkit-backdrop-filter: blur(5px);
 			backdrop-filter: blur(5px);
-			background: linear-gradient(90deg, var(--black) 0%, var(--black-06) 100%);
+			background: linear-gradient(90deg, var(--black-08) 0%, var(--black-04) 100%);
+		}
 
+		.fs-true .dnone {
+			display: none !important;
+		}
+
+		.fs-true.gathering .model label {
+			padding: 6px 12px;
+			display: inline-block;
+			margin-right: 1px;
+			-webkit-backdrop-filter: blur(5px);
+			backdrop-filter: blur(5px);
+			background: linear-gradient(90deg, var(--black-08) 0%, var(--black-04) 100%);
+			border: 0px;
+		}
+
+		.fs-true.gathering .model label:hover {
+			background: var(--green);
 		}
 
 		.fs-true .subinfo>div:hover .content {
-			background: linear-gradient(90deg, var(--black) 0%, var(--black-06) 100%);
+			background: linear-gradient(90deg, var(--pink) 0%, var(--pink-06) 100%);
 		}
 
+		/* 
 		.fs-true .subinfo>div {
-			border: 1px solid var(--white-01);
+			border: 0px solid var(--white-01);
 		}
 
 		.fs-true .subinfo>div:hover {
-			border: 1px solid var(--white-02);
-		}
+			border: 1px solid var(--white-01);
+		} */
 
 		.milsec {
 			width: 60px;
@@ -1317,16 +1351,28 @@
 
 		.tgl-flip+.tgl-btn:after {
 			content: attr(data-tg-on);
-			background: #0DFF92;
+			background: var(--green);
 			padding: 3px 0 0 0;
 			color: #000;
 			transform: rotateY(-180deg);
 		}
 
 		.tgl-flip+.tgl-btn:before {
-			background: rgba(255, 31, 122, 1);
+			background: var(--pink);
 			padding: 3px 0 0 0;
 			content: attr(data-tg-off);
+		}
+
+		.fs-true.gathering .tgl-flip+.tgl-btn {
+			margin: 0 0;
+		}
+
+		.fs-true.gathering .tgl-flip+.tgl-btn:before {
+			padding: 6px 0 2.7px 0;
+		}
+
+		.fs-true.gathering .tgl-flip+.tgl-btn:after {
+			padding: 5.6px 0 3px 0;
 		}
 
 		.tgl-flip+.tgl-btn:active:before {
@@ -1341,7 +1387,7 @@
 			transform: rotateY(0);
 			left: 0;
 			color: #000;
-			background: #0DFF92;
+			background: var(--green);
 		}
 
 		.tgl-flip:checked+.tgl-btn:active:after {
@@ -1363,22 +1409,57 @@
 
 		.model label:hover {
 			border: 1px solid var(--white-02);
-			background: #0DFF92;
+			background: var(--green);
 			color: #000;
 		}
 
 		.model.m_1 label:first-child {
-			background: rgba(255, 31, 122, 1);
+			background: var(--pink);
 		}
 
 		.model.m_2 label:nth-child(even) {
-			background: rgba(255, 31, 122, 1);
+			background: var(--pink);
 		}
 
 		.model.m_3 label:last-child {
-			background: rgba(255, 31, 122, 1);
+			background: var(--pink);
 		}
 
+		.fs-true.gathering .model.m_1 label:first-child {
+			background: linear-gradient(90deg, var(--pink-08) 0%, var(--pink-06) 100%);
+		}
+
+		.fs-true.gathering .model.m_2 label:nth-child(even) {
+			background: linear-gradient(90deg, var(--pink-08) 0%, var(--pink-06) 100%);
+		}
+
+		.fs-true.gathering .model.m_3 label:last-child {
+			background: linear-gradient(90deg, var(--pink-08) 0%, var(--pink-06) 100%);
+		}
+
+		.fs-true.gathering .tgl-flip+.tgl-btn:before {
+			background: linear-gradient(90deg, var(--pink-08) 0%, var(--pink-06) 100%);
+		}
+
+		.fs-true.gathering .tgl-flip:checked+.tgl-btn:after {
+			background: linear-gradient(90deg, var(--green) 0%, var(--green-06) 100%);
+		}
+
+		.fs-true.gathering .model.m_1 label:first-child:hover {
+			background: linear-gradient(90deg, var(--green) 0%, var(--green-06) 100%);
+		}
+
+		.fs-true.gathering .model.m_2 label:nth-child(even):hover {
+			background: linear-gradient(90deg, var(--green) 0%, var(--green-06) 100%);
+		}
+
+		.fs-true.gathering .model.m_3 label:last-child:hover {
+			background: linear-gradient(90deg, var(--green) 0%, var(--green-06) 100%);
+		}
+
+		.fs-true.gathering .model label:hover {
+			color: var(--black);
+		}
 
 		.model .check {
 			display: block;
@@ -1395,35 +1476,20 @@
 			display: none;
 		}
 
-		.model:hover .check {
-			border: 5px solid #FFFFFF;
-		}
-
-		.model .check::before {
-			display: block;
-			position: absolute;
-			content: '';
-			border-radius: 100%;
-			height: 15px;
-			width: 15px;
-			top: 5px;
-			left: 5px;
-			margin: auto;
-			transition: background 0.25s linear;
-			-webkit-transition: background 0.25s linear;
-			display: none;
-		}
-
 		.model input[type=radio]:checked~.check {
-			border: 5px solid #0DFF92;
+			border: 5px solid var(--green);
 		}
 
 		.model input[type=radio]:checked~.check::before {
-			background: #0DFF92;
+			background: var(--green);
 		}
 
 		.model input[type=radio]:checked~label {
-			color: #0DFF92;
+			color: var(--green);
+		}
+
+		.fs-true.gathering:hover {
+			border: 1px solid var(--energybluefull);
 		}
 	</style>
 	<!-- <script src="../js/mediapipe/camera_utils_local.js" crossorigin="anonymous"></script>

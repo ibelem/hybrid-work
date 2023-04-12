@@ -58,6 +58,10 @@
 	// SD 720x480, HD 1280x720 , Full HD: 1920x1280,
 	// 2K 2048 x 1080, QHD 2560 x 1440, 4K 3840 x 2160 8K 7680 x 4320
 	let resolution = { width: 1280, height: 720 };
+	let sw = resolution.width;
+	let sh = resolution.height;
+	let vr = 'HD',
+		vrdata = '1280x720';
 
 	let avTrackConstraint = {
 		audio: {
@@ -153,8 +157,14 @@
 		}
 	};
 
-	const toggleBeauty = () => {
-		beauty = !beauty;
+	const videoResolution = () => {
+		if (sw === 1280) {
+			vr = 'HD';
+		}
+		if (sw === 720) {
+			vr = 'SD';
+		}
+		vrdata = sw + 'x' + sh;
 	};
 
 	const updateBackgroundImage = (e) => {
@@ -805,6 +815,7 @@
 			pipeline2.updatePostProcessingConfig(postProcessingConfig);
 
 			const videoCanvasOnFrame = async () => {
+				videoResolution();
 				if (continueInputVideo) {
 					requestAnimationFrame(videoCanvasOnFrame);
 					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
@@ -863,6 +874,7 @@
 			};
 
 			segmentation = async () => {
+				videoResolution();
 				if (modelName != '') abortTransform();
 				modelName = modelConfigs[modelId].name;
 				modelConfig = modelConfigs[modelId].inputDimensions.toString().replaceAll(',', 'x');
@@ -1158,9 +1170,6 @@
 				</div>
 			</div>
 		</div>
-
-		<!-- <button id="beauty" type="button" on:click={toggleBeauty}>Beauty</button> -->
-
 		<!-- <div>{@html error}</div> -->
 
 		<div class="certmsg {hideError}">
@@ -1185,17 +1194,28 @@
 		<div class="indicatorContainer">
 			<div class="indicator">
 				<Meter />
+				<div class="inference ichild">
+					<div class="time first">
+						<div class="if">{vrdata}</div>
+						<div class="unit">
+							{vr}
+						</div>
+					</div>
+					<div class="title">Video Resolution</div>
+				</div>
 				{#if bb || br}
 					<div class="inference ichild {none}">
 						<div class="time first">
-							<div bind:this={inference} id="inferencetime">{inferenceData}</div>
+							<div bind:this={inference} id="inferencetime" class="if">
+								{inferenceData}
+							</div>
 							<div class="unit">ms</div>
 						</div>
 						<div class="title">Inference Time</div>
 					</div>
-					<div class="inferencefps ichild {none}">
+					<div class="inference ichild {none}">
 						<div class="fps first">
-							<div class="fpsdata">{inferenceFpsData}</div>
+							<div class="if">{inferenceFpsData}</div>
 							<div class="unit">fps</div>
 						</div>
 						<div class="title">Inference FPS</div>
@@ -1213,12 +1233,13 @@
 				{#if bb || br}
 					<div>
 						<span class="divider" />
-						<span class="content">{modelName}</span>
+						<span class="content dnone">{modelName}</span>
 					</div>
 					<div>
 						<span class="content">Loaded {loadTime}</span>
 					</div>
 					<div>
+						<span class="divider" />
 						<span class="content">{modelConfig}</span>
 					</div>
 
