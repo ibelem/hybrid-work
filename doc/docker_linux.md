@@ -67,4 +67,15 @@ $ ./bin/start-all.sh
 $ ./bin/stop-all.sh
 ```
 
+### System Reboot
+
+If you reboot the system and the container is not running, please try:
+
+```
+$ docker start owt1
+$ docker exec -it owt1 bash
+$ cd owt
+$ ./launch.sh
+```
+
 Go back to [README.md](../README.md)
