@@ -44,4 +44,19 @@ const modelConfigs = [
 	}
 ];
 
-export { bgList, inputOptions, modelConfigs };
+// SD 720x480, HD 1280x720 , Full HD: 1920x1280,
+// 2K 2048 x 1080, QHD 2560 x 1440, 4K 3840 x 2160 8K 7680 x 4320
+
+const resolutionSet = [
+	{ id: 1, width: 360, height: 240, name: 'WQVGA' },
+	{ id: 2, width: 480, height: 320, name: 'HVGA' },
+	{ id: 3, width: 720, height: 480, name: 'SD WVGA' },
+	{ id: 4, width: 1280, height: 720, name: 'HD WXGA' },
+	{ id: 5, width: 1920, height: 1280, name: 'Full HD', note: 'Not Supported' },
+	{ id: 6, width: 2048, height: 1080, name: '2K', note: 'Not Supported' },
+	{ id: 7, width: 2560, height: 1440, name: 'QHD', note: 'Not Supported' },
+	{ id: 8, width: 3840, height: 2160, name: '4K UHD', note: 'Not Supported' },
+	{ id: 9, width: 7680, height: 4320, name: '8K UHD', note: 'Not Supported' }
+];
+
+export { bgList, inputOptions, modelConfigs, resolutionSet };

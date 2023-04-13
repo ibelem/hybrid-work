@@ -19,7 +19,12 @@
 		getVideoFrame,
 		getInputTensor
 	} from '../../../js/client/utils.js';
-	import { bgList, inputOptions, modelConfigs } from '../../../js/client/resource.js';
+	import {
+		bgList,
+		inputOptions,
+		modelConfigs,
+		resolutionSet
+	} from '../../../js/client/resource.js';
 	import {
 		send,
 		generateUrl,
@@ -48,20 +53,17 @@
 		pauseVideoMsg = '';
 	let pauseVideo = false;
 	let audioOnly = false;
-	let beauty = false;
 
 	let backgroundImage, bgInput;
 	let gatheringVideos, gatheringInfo, controlPanel;
 	let gatheringView = 'g gathering';
 	let column;
 
-	// SD 720x480, HD 1280x720 , Full HD: 1920x1280,
-	// 2K 2048 x 1080, QHD 2560 x 1440, 4K 3840 x 2160 8K 7680 x 4320
-	let resolution = { width: 1280, height: 720 };
-	let sw = resolution.width;
-	let sh = resolution.height;
-	let vr = 'HD',
-		vrdata = '1280x720';
+	let resolution = resolutionSet[3];
+	$: sw = resolution.width;
+	$: sh = resolution.height;
+	$: vr = resolution.name;
+	$: vrdata = sw + 'x' + sh;
 
 	let avTrackConstraint = {
 		audio: {
@@ -158,13 +160,7 @@
 	};
 
 	const videoResolution = () => {
-		if (sw === 1280) {
-			vr = 'HD';
-		}
-		if (sw === 720) {
-			vr = 'SD';
-		}
-		vrdata = sw + 'x' + sh;
+		//
 	};
 
 	const updateBackgroundImage = (e) => {
@@ -919,28 +915,16 @@
 					backgroundType = 'none';
 					continueInputVideo = true;
 					await videoCanvasOnFrame();
-					cl('///++++');
-					cl(`br: ${br}, bblur: ${bb}`);
 				} else {
 					if (br && bb) {
-						cl('///000');
-						cl(`br: ${br}, bblur: ${bb}`);
 						backgroundType = 'image';
 					} else if (bb) {
-						cl('///111');
-						cl(`br: ${br}, bblur: ${bb}`);
 						backgroundType = 'blur';
 					} else if (br) {
-						cl('///222');
-						cl(`br: ${br}, bblur: ${bb}`);
 						backgroundType = 'image';
-					} else {
-						cl('///===');
-						cl(`br: ${br}, bblur: ${bb}`);
 					}
-
-					continueInputVideo = false;
 					await segmentation();
+					continueInputVideo = false;
 				}
 			};
 
