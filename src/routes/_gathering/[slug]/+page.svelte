@@ -333,12 +333,17 @@
 					if (computeDataArrayWasm.length > 0) {
 						geomeanWasm = geometricMean(computeDataArrayWasm, computeDataArrayWasm.length, 2);
 					}
+
 					if (computeDataFPSArrayWasm.length > 0) {
 						geomeanFPSWasm = geometricMean(
 							computeDataFPSArrayWasm,
 							computeDataFPSArrayWasm.length,
 							0
 						);
+					}
+
+					if (geomeanWebnn && geomeanWasm) {
+						geomeanVs = (geomeanWasm / geomeanWebnn).toFixed(1);
 					}
 				}
 
@@ -361,6 +366,8 @@
 					computeDataFPSArrayWebnn = computeDataWebnn.map((data) => {
 						return data.inferenceFps;
 					});
+
+					console.log(computeDataArrayWebnn);
 
 					if (computeDataArrayWebnn.length > 0) {
 						geomeanWebnn = geometricMean(computeDataArrayWebnn, computeDataArrayWebnn.length, 2);
@@ -1301,7 +1308,7 @@
 					</div>
 					<img
 						bind:this={backgroundImage}
-						src="../img/ssbg/01.jpg"
+						src="../img/ssbg/00.jpg"
 						style="display:none"
 						alt="background"
 					/>
@@ -1358,7 +1365,7 @@
 								</div>
 							</div>
 						</div>
-						{#if geomeanWasm}
+						{#if geomeanWasm || geomeanWebnn}
 							<div class="geomean">
 								<div class="">
 									<div class="note">Geomean</div>
