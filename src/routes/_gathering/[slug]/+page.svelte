@@ -1390,7 +1390,7 @@
 								>{/if}
 							{geomeanCPState}
 						</div>
-						<div class="title">Geomean of CP</div>
+						<div class="title">Geomean of CP in 1 Min</div>
 					</div>
 				{/if}
 

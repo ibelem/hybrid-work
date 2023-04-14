@@ -1,10 +1,10 @@
 {
-	"id3": "6436e106eb6b4c04264c89d2",
-	"key3": "k1A4RWn5I7/lAtwJNLx+t55ln3JWiEcmanRr2pz152zdxQ6URPZrqOx/o+GSDW0dO5gtLYnXl7N7lEXiYQKHOTZRC054gSMA8cvn1DRJFY892hksLUSSWJjha1FbtlUY91cUTFVUiHvfOHbrRKdnb8311B1m1kQTq0v++PHguKE=",
-	"url3": "https://10.239.115.77:3000/",
-	"id": "63d8b135831c3003ef835b36",
-	"key": "bbqjbX0RxwoZC4Lr1BtLC/51uf+TqjobXDuqR6EZvOYxHqkE+B9uWwajyNgJvrriVEvL2MWIGy+RgDOK0cjb312OzR2LcJlrSps8WG440jj/pblhMXGu9rQHBZHZul0LsDTlskeyrlwMjxK9xs0RyEE3fcFdyOnqAESLvU8smhk=",
-	"url": "https://10.239.115.52:3000/",
+	"id": "6436e106eb6b4c04264c89d2",
+	"key": "k1A4RWn5I7/lAtwJNLx+t55ln3JWiEcmanRr2pz152zdxQ6URPZrqOx/o+GSDW0dO5gtLYnXl7N7lEXiYQKHOTZRC054gSMA8cvn1DRJFY892hksLUSSWJjha1FbtlUY91cUTFVUiHvfOHbrRKdnb8311B1m1kQTq0v++PHguKE=",
+	"url": "https://10.239.115.77:3000/",
+	"id2": "63d8b135831c3003ef835b36",
+	"key2": "bbqjbX0RxwoZC4Lr1BtLC/51uf+TqjobXDuqR6EZvOYxHqkE+B9uWwajyNgJvrriVEvL2MWIGy+RgDOK0cjb312OzR2LcJlrSps8WG440jj/pblhMXGu9rQHBZHZul0LsDTlskeyrlwMjxK9xs0RyEE3fcFdyOnqAESLvU8smhk=",
+	"url2": "https://10.239.115.52:3000/",
 	"httpsPort": 8082,
 	"cert": "./cert/gwo.crt",
 	"certkey": "./cert/gwo.key"
