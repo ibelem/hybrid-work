@@ -233,6 +233,18 @@ const geometricMean = (arr, n, length) => {
 	return gm;
 };
 
+// var EPSILON = 0.000001;
+
+// const fp_less_than = (A, B, Epsilon) => {
+// 	Epsilon = Epsilon || EPSILON;
+// 	return A - B < Epsilon && Math.abs(A - B) > Epsilon;
+// };
+
+// const fp_greater_than = (A, B, Epsilon) => {
+// 	Epsilon = Epsilon || EPSILON;
+// 	return A - B > Epsilon && Math.abs(A - B) > Epsilon;
+// };
+
 export {
 	initials,
 	cl,

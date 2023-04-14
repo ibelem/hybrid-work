@@ -57,7 +57,7 @@
 	let audioOnly = false;
 
 	let backgroundImage, bgInput;
-	let gatheringVideos, gatheringInfo, controlPanel;
+	let gatheringVideos, gatheringInfo;
 	let gatheringView = 'g gathering';
 	let column;
 
@@ -137,6 +137,31 @@
 	$: geomeanFPSWebnn = '';
 	$: geomeanVs = 0;
 	let computeInterval;
+	$: cpArray = [];
+	let geomeanCP = 0;
+	let geomeanCPState = '';
+
+	const handleCPMessage = (event) => {
+		let msg = event.detail.msg;
+		if (msg) {
+			if (cpArray.length >= 12) {
+				cpArray.shift();
+			}
+			cpArray.push(msg * 1000);
+			cpArray = cpArray;
+			geomeanCP = geometricMean(cpArray, cpArray.length, 0);
+
+			if (geomeanCP < 250) {
+				geomeanCPState = 'nominal';
+			} else if (250 <= geomeanCP && geomeanCP < 500) {
+				geomeanCPState = 'fair';
+			} else if (500 <= geomeanCP && geomeanCP < 750) {
+				geomeanCPState = 'serious';
+			} else if (geomeanCP >= 750) {
+				geomeanCPState = 'critical';
+			}
+		}
+	};
 
 	const millSecInFullscreen = () => {
 		if (fs) {
@@ -241,7 +266,6 @@
 					});
 
 					if (computeDataArrayWasm.length > 0) {
-						cl(computeDataArrayWasm);
 						geomeanWasm = geometricMean(computeDataArrayWasm, computeDataArrayWasm.length, 2);
 					}
 					if (computeDataFPSArrayWasm.length > 0) {
@@ -936,7 +960,6 @@
 							await drawOutput(outputBuffer, videoFrame);
 							inferenceFpsData = (1000 / inferenceData).toFixed(0);
 						}
-						cl('computing: ++++++++++');
 					}
 					const frame_from_canvas = new VideoFrame(outputCanvas, { timestamp: 0 });
 					videoFrame.close();
@@ -1323,8 +1346,54 @@
 	</div>
 	<footer>
 		<div class="indicatorContainer">
+			<!-- {#if geomeanCP}<div class="cpdata">{cpArray} | {geomeanCP} - {geomeanCPState}</div>{/if} -->
 			<div class="indicator">
-				<Meter />
+				<Meter on:message={handleCPMessage} />
+				{#if geomeanCP}
+					<div class="computepressure ichild">
+						<div class="first {geomeanCPState}">
+							{#if geomeanCPState === 'nominal'}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="48"
+									viewBox="0 96 960 960"
+									width="48"
+									><path
+										d="M626 523q22.5 0 38.25-15.75T680 469q0-22.5-15.75-38.25T626 415q-22.5 0-38.25 15.75T572 469q0 22.5 15.75 38.25T626 523Zm-292 0q22.5 0 38.25-15.75T388 469q0-22.5-15.75-38.25T334 415q-22.5 0-38.25 15.75T280 469q0 22.5 15.75 38.25T334 523Zm146 272q66 0 121.5-35.5T682 663h-52q-23 40-63 61.5T480.5 746q-46.5 0-87-21T331 663h-53q26 61 81 96.5T480 795Zm0 181q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142.375 0 241.188-98.812Q820 718.375 820 576t-98.812-241.188Q622.375 236 480 236t-241.188 98.812Q140 433.625 140 576t98.812 241.188Q337.625 916 480 916Z"
+									/></svg
+								>{/if}
+							{#if geomeanCPState === 'fair'}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="48"
+									viewBox="0 96 960 960"
+									width="48"
+									><path
+										d="M626 523q22.5 0 38.25-15.75T680 469q0-22.5-15.75-38.25T626 415q-22.5 0-38.25 15.75T572 469q0 22.5 15.75 38.25T626 523Zm-292 0q22.5 0 38.25-15.75T388 469q0-22.5-15.75-38.25T334 415q-22.5 0-38.25 15.75T280 469q0 22.5 15.75 38.25T334 523Zm20 194h253v-49H354v49Zm126 259q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142.375 0 241.188-98.812Q820 718.375 820 576t-98.812-241.188Q622.375 236 480 236t-241.188 98.812Q140 433.625 140 576t98.812 241.188Q337.625 916 480 916Z"
+									/></svg
+								>{/if}
+							{#if geomeanCPState === 'serious'}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="48"
+									viewBox="0 96 960 960"
+									width="48"
+									><path
+										d="M626 523q22.5 0 38.25-15.75T680 469q0-22.5-15.75-38.25T626 415q-22.5 0-38.25 15.75T572 469q0 22.5 15.75 38.25T626 523Zm-292 0q22.5 0 38.25-15.75T388 469q0-22.5-15.75-38.25T334 415q-22.5 0-38.25 15.75T280 469q0 22.5 15.75 38.25T334 523Zm146.174 116Q413 639 358.5 676.5T278 776h53q22-42 62.173-65t87.5-23Q528 688 567.5 711.5T630 776h52q-25-63-79.826-100-54.826-37-122-37ZM480 976q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142.375 0 241.188-98.812Q820 718.375 820 576t-98.812-241.188Q622.375 236 480 236t-241.188 98.812Q140 433.625 140 576t98.812 241.188Q337.625 916 480 916Z"
+									/></svg
+								>{/if}
+							{#if geomeanCPState === 'critical'}
+								<svg height="48" viewBox="0 96 960 960" width="48"
+									><path
+										d="M480 639q-67 0-121.5 37.5T278 776h404q-25-63-80-100t-122-37Zm-183-72 50-45 45 45 31-36-45-45 45-45-31-36-45 45-50-45-31 36 45 45-45 45 31 36Zm272 0 44-45 51 45 31-36-45-45 45-45-31-36-51 45-44-45-31 36 44 45-44 45 31 36Zm-89 409q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142 0 241-99t99-241q0-142-99-241t-241-99q-142 0-241 99t-99 241q0 142 99 241t241 99Z"
+									/></svg
+								>{/if}
+							{geomeanCPState}
+						</div>
+						<div class="title">Geomean of CP</div>
+					</div>
+				{/if}
+
 				<div class="inference ichild">
 					<div class="time first">
 						<div class="if">{vrdata}</div>
@@ -1416,8 +1485,6 @@
 				{/if}
 			</div>
 		</div>
-
-		<div bind:this={controlPanel} style="display: none" />
 		<Control bind:ul bind:me bind:bb bind:br bind:none on:message={handleMessage} />
 	</footer>
 </div>
