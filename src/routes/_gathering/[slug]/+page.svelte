@@ -140,8 +140,73 @@
 	$: cpArray = [];
 	let geomeanCP = 0;
 	let geomeanCPState = '';
+	let autoCP = false;
 
-	const handleCPMessage = (event) => {
+	const changeCP = async () => {
+		autoCP = !autoCP;
+		cl('autocp: ' + autoCP);
+		if (autoCP === false) {
+			if (sw !== 1280) {
+				resolution = resolutionSet[3];
+				avTrackConstraint.video.resolution = resolution;
+				outputCanvas.width = resolution.width;
+				outputCanvas.height = resolution.height;
+				await OWTStream();
+			}
+		}
+	};
+
+	const updateVideoResolution = async () => {
+		cl('autocp: ' + autoCP);
+		if (geomeanCPState === 'serious' || geomeanCPState === 'critical') {
+			switch (sw) {
+				case 1280:
+					resolution = resolutionSet[2];
+					break;
+				case 720:
+					resolution = resolutionSet[1];
+					break;
+				case 480:
+					resolution = resolutionSet[0];
+					break;
+				default:
+					resolution = resolutionSet[0];
+					break;
+			}
+			if (sw !== 360) {
+				avTrackConstraint.video.resolution = resolution;
+				outputCanvas.width = resolution.width;
+				outputCanvas.height = resolution.height;
+				await OWTStream();
+			}
+		}
+
+		if (geomeanCPState === 'nominal' || geomeanCPState === 'fair') {
+			switch (sw) {
+				case 360:
+					resolution = resolutionSet[1];
+					break;
+				case 480:
+					resolution = resolutionSet[2];
+					break;
+				case 720:
+					resolution = resolutionSet[3];
+					break;
+				default:
+					resolution = resolutionSet[3];
+					break;
+			}
+
+			if (sw !== 1280) {
+				avTrackConstraint.video.resolution = resolution;
+				outputCanvas.width = resolution.width;
+				outputCanvas.height = resolution.height;
+				await OWTStream();
+			}
+		}
+	};
+
+	const handleCPMessage = async (event) => {
 		let msg = event.detail.msg;
 		if (msg) {
 			if (cpArray.length >= 12) {
@@ -159,6 +224,10 @@
 				geomeanCPState = 'serious';
 			} else if (geomeanCP >= 750) {
 				geomeanCPState = 'critical';
+			}
+
+			if (autoCP) {
+				await updateVideoResolution();
 			}
 		}
 	};
@@ -196,10 +265,6 @@
 			removeFullClass();
 			canvasOrVideo.classList.add('full');
 		}
-	};
-
-	const videoResolution = () => {
-		//
 	};
 
 	const updateBackgroundImage = (e) => {
@@ -585,8 +650,6 @@
 		cl('== addRoomEventListener ==');
 		room.addEventListener('streamadded', (streamEvent) => {
 			let stream = streamEvent.stream;
-			cl(stream);
-
 			if (localStream && localStream.id === stream.id) {
 				return;
 			} else {
@@ -845,15 +908,17 @@
 		}
 	};
 
-	const createOWTStream = async () => {
+	const OWTStream = async () => {
 		stream = await Owt.Base.MediaStreamFactory.createMediaStream(avTrackConstraint);
-		if ('srcObject' in inputVideo) {
-			inputVideo.srcObject = stream;
-		} else {
-			inputVideo.src = URL.createObjectURL(stream);
-		}
+		if (inputVideo) {
+			if ('srcObject' in inputVideo) {
+				inputVideo.srcObject = stream;
+			} else {
+				inputVideo.src = URL.createObjectURL(stream);
+			}
 
-		inputVideo.autoplay = true;
+			inputVideo.autoplay = true;
+		}
 	};
 
 	onDestroy(async () => {
@@ -936,7 +1001,6 @@
 
 			let req;
 			const videoCanvasOnFrame = async () => {
-				videoResolution();
 				if (continueInputVideo) {
 					req = requestAnimationFrame(videoCanvasOnFrame);
 					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
@@ -998,7 +1062,6 @@
 			};
 
 			segmentation = async () => {
-				videoResolution();
 				if (modelName != '') abortTransform();
 				modelName = modelConfigs[modelId].name;
 				modelConfig = modelConfigs[modelId].inputDimensions.toString().replaceAll(',', 'x');
@@ -1062,7 +1125,7 @@
 
 			const init = async () => {
 				verifyMediaStreamTrack();
-				await createOWTStream();
+				await OWTStream();
 				getProcessedStream();
 				initConference();
 				backgroundType = 'none';
@@ -1401,7 +1464,7 @@
 							{vr}
 						</div>
 					</div>
-					<div class="title">Video Resolution</div>
+					<div class="title">Publish Resolution</div>
 				</div>
 				{#if bb || br}
 					<div class="inference ichild {none}">
@@ -1429,6 +1492,16 @@
 						{#if fs}
 							{millSec}{/if}
 					</span>
+				</div>
+				<div>
+					<input
+						class="cp tgl tgl-flip"
+						id="cpAuto"
+						on:click={changeCP}
+						bind:checked={autoCP}
+						type="checkbox"
+					/>
+					<label class="tgl-btn" data-tg-off="Auto CP Off" data-tg-on="Auto CP On" for="cpAuto" />
 				</div>
 				{#if bb || br}
 					<div>
