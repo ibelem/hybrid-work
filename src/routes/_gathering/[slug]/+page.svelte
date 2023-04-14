@@ -1432,10 +1432,6 @@
 				</div>
 				{#if bb || br}
 					<div>
-						<span class="divider" />
-						<span class="content dnone">{modelName}</span>
-					</div>
-					<div>
 						<span class="content">Loaded {loadTime}</span>
 					</div>
 					<div>
