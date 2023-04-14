@@ -121,8 +121,10 @@ const getInputTensor = (inputElement, inputOptions) => {
 	const inputDimensions = inputOptions.inputDimensions;
 	const tensor = new Float32Array(inputDimensions.slice(1).reduce((a, b) => a * b));
 
-	inputElement.width = inputElement.videoWidth || inputElement.naturalWidth || inputElement.displayWidth;
-	inputElement.height = inputElement.videoHeight || inputElement.naturalHeight || inputElement.displayHeight;
+	inputElement.width =
+		inputElement.videoWidth || inputElement.naturalWidth || inputElement.displayWidth;
+	inputElement.height =
+		inputElement.videoHeight || inputElement.naturalHeight || inputElement.displayHeight;
 
 	let [channels, height, width] = inputDimensions.slice(1);
 	const mean = inputOptions.mean || [0, 0, 0, 0];
@@ -193,6 +195,44 @@ const getInputTensor = (inputElement, inputOptions) => {
 	return tensor;
 };
 
+const verifyMediaStreamTrack = () => {
+	// Global MediaStreamTrackProcessor, MediaStreamTrackGenerator, VideoFrame.
+	if (
+		typeof MediaStreamTrackProcessor === 'undefined' ||
+		typeof MediaStreamTrackGenerator === 'undefined'
+	) {
+		console.error(
+			'Your browser does not support the MediaStreamTrack API for Insertable Streams of Media.'
+		);
+	}
+	try {
+		new MediaStreamTrackGenerator('video');
+		console.log('Video insertable streams supported.');
+	} catch (e) {
+		console.error('Your browser does not support insertable video streams.');
+	}
+	if (typeof VideoFrame === 'undefined') {
+		console.error('Your browser does not support WebCodecs.');
+	}
+};
+
+const geometricMean = (arr, n, length) => {
+	// declare product variable and
+	// initialize it to 1.
+	let product = 1;
+
+	// Compute the product of all the
+	// elements in the array.
+	for (let i = 0; i < n; i++) product = product * arr[i];
+
+	// compute geometric mean through
+	// formula pow(product, 1/n) and
+	// return the value to main function.
+	let gm = Math.pow(product, 1 / n);
+	gm = gm.toFixed(length);
+	return gm;
+};
+
 export {
 	initials,
 	cl,
@@ -208,5 +248,7 @@ export {
 	fullscreen,
 	exitFullscreen,
 	getVideoFrame,
-	getInputTensor
+	getInputTensor,
+	geometricMean,
+	verifyMediaStreamTrack
 };

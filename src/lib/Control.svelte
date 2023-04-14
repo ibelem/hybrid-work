@@ -3,7 +3,7 @@
 	const dispatch = createEventDispatcher();
 
 	export let vi = false,
-		au = false,
+		au = true,
 		ss = false,
 		ul = false,
 		me = false,
@@ -17,6 +17,9 @@
 	};
 	const aU = () => {
 		au = !au;
+		dispatch('message', {
+			msg: 'au'
+		});
 	};
 	const vI = () => {
 		vi = !vi;

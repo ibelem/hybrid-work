@@ -17,7 +17,9 @@
 		fullscreen,
 		exitFullscreen,
 		getVideoFrame,
-		getInputTensor
+		getInputTensor,
+		geometricMean,
+		verifyMediaStreamTrack
 	} from '../../../js/client/utils.js';
 	import {
 		bgList,
@@ -95,7 +97,6 @@
 		participantId;
 	let msg = '',
 		msgs = [];
-	let muted = false;
 	let stream, processedStream, localStream;
 	let videoList = [];
 	let subList = {};
@@ -124,9 +125,18 @@
 	let continueInputVideo = true;
 	let segmentation, segmentSemantic, renderCamStream;
 
-	$: computeData = [];
+	$: computeDataWasm = [];
+	$: computeDataWebnn = [];
+	let computeDataArrayWasm = [];
+	let computeDataFPSArrayWasm = [];
+	let computeDataArrayWebnn = [];
+	let computeDataFPSArrayWebnn = [];
+	$: geomeanWasm = '';
+	$: geomeanFPSWasm = '';
+	$: geomeanWebnn = '';
+	$: geomeanFPSWebnn = '';
+	$: geomeanVs = 0;
 	let computeInterval;
-	let backend = 'wasm';
 
 	const millSecInFullscreen = () => {
 		if (fs) {
@@ -186,11 +196,6 @@
 		}
 	};
 
-	const closeInferenceData = () => {
-		// ul = false;
-		gridSidebar();
-	};
-
 	const closeParticipants = () => {
 		ul = false;
 		gridSidebar();
@@ -209,30 +214,81 @@
 
 	const showInferenceIndicator = () => {
 		if (br || bb) {
-			if (enableWebnnDelegate) {
-				backend = 'webnn';
-			} else {
-				backend = 'wasm';
-			}
 			computeInterval = setInterval(() => {
-				cl(backend);
 				let inf = {
-					backend: backend,
-					model: modelName,
 					inference: inferenceData,
 					inferenceFps: inferenceFpsData
 				};
 
-				if (computeData.length === 10) {
-					computeData.shift();
+				if (!enableWebnnDelegate) {
+					if (inferenceFpsData === 0) {
+						return;
+					}
+					if (computeDataWasm.length === 10) {
+						computeDataWasm.shift();
+					}
+					if (inferenceFpsData != 0) {
+						computeDataWasm.push(inf);
+					}
+					computeDataWasm = computeDataWasm;
+
+					computeDataArrayWasm = computeDataWasm.map((data) => {
+						return data.inference;
+					});
+
+					computeDataFPSArrayWasm = computeDataWasm.map((data) => {
+						return data.inferenceFps;
+					});
+
+					if (computeDataArrayWasm.length > 0) {
+						cl(computeDataArrayWasm);
+						geomeanWasm = geometricMean(computeDataArrayWasm, computeDataArrayWasm.length, 2);
+					}
+					if (computeDataFPSArrayWasm.length > 0) {
+						geomeanFPSWasm = geometricMean(
+							computeDataFPSArrayWasm,
+							computeDataFPSArrayWasm.length,
+							0
+						);
+					}
 				}
 
-				if (inferenceFpsData != 0) {
-					computeData.push(inf);
-				}
+				if (enableWebnnDelegate) {
+					if (inferenceFpsData === 0) {
+						return;
+					}
+					if (computeDataWebnn.length === 10) {
+						computeDataWebnn.shift();
+					}
+					if (inferenceFpsData != 0) {
+						computeDataWebnn.push(inf);
+					}
+					computeDataWebnn = computeDataWebnn;
 
-				computeData = computeData;
-				cl(computeData);
+					computeDataArrayWebnn = computeDataWebnn.map((data) => {
+						return data.inference;
+					});
+
+					computeDataFPSArrayWebnn = computeDataWebnn.map((data) => {
+						return data.inferenceFps;
+					});
+
+					if (computeDataArrayWebnn.length > 0) {
+						geomeanWebnn = geometricMean(computeDataArrayWebnn, computeDataArrayWebnn.length, 2);
+					}
+
+					if (computeDataFPSArrayWebnn.length > 0) {
+						geomeanFPSWebnn = geometricMean(
+							computeDataFPSArrayWebnn,
+							computeDataFPSArrayWebnn.length,
+							0
+						);
+					}
+
+					if (geomeanWebnn && geomeanWasm) {
+						geomeanVs = (geomeanWasm / geomeanWebnn).toFixed(1);
+					}
+				}
 			}, 2000);
 		} else {
 			clearInterval(computeInterval);
@@ -451,8 +507,8 @@
 
 	const getProcessedStream = () => {
 		processedStream = outputCanvas.captureStream();
-		// const audiotrack = stream.getAudioTracks()[0];
-		// processedStream.addTrack(audiotrack);
+		const audiotrack = stream.getAudioTracks()[0];
+		processedStream.addTrack(audiotrack);
 	};
 
 	let createLocal = async () => {
@@ -488,8 +544,8 @@
 		let publication = await room.publish(localStream);
 		localPublication = publication;
 
-		// pauseAudio = false;
-		// toggleAudio();
+		pauseAudio = false;
+		toggleAudio();
 		// pauseVideo = true;
 		// toggleVideo();
 
@@ -741,6 +797,9 @@
 			case 'tv':
 				toggleVideo();
 				break;
+			case 'au':
+				toggleAudio();
+				break;
 			case 'layout':
 				brUi();
 				switchInference();
@@ -851,14 +910,17 @@
 
 			pipeline2.updatePostProcessingConfig(postProcessingConfig);
 
+			let req;
 			const videoCanvasOnFrame = async () => {
 				videoResolution();
 				if (continueInputVideo) {
-					requestAnimationFrame(videoCanvasOnFrame);
+					req = requestAnimationFrame(videoCanvasOnFrame);
 					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
 					if (stream) {
 						await pipeline2.render();
 					}
+				} else {
+					cancelAnimationFrame(req);
 				}
 			};
 
@@ -909,7 +971,7 @@
 
 				processedStream.addTrack(generator);
 
-				showInferenceIndicator();
+				setTimeout(showInferenceIndicator, 5000);
 			};
 
 			segmentation = async () => {
@@ -950,6 +1012,10 @@
 				models = event.currentTarget.value;
 				modelId = models - 1;
 				modelChanged = true;
+				computeDataWasm = [];
+				computeDataWebnn = [];
+				geomeanWasm = '';
+				geomeanWebnn = '';
 				await segmentation();
 			};
 
@@ -968,27 +1034,6 @@
 					}
 					await segmentation();
 					continueInputVideo = false;
-				}
-			};
-
-			const verifyMediaStreamTrack = () => {
-				// Global MediaStreamTrackProcessor, MediaStreamTrackGenerator, VideoFrame.
-				if (
-					typeof MediaStreamTrackProcessor === 'undefined' ||
-					typeof MediaStreamTrackGenerator === 'undefined'
-				) {
-					console.error(
-						'Your browser does not support the MediaStreamTrack API for Insertable Streams of Media.'
-					);
-				}
-				try {
-					new MediaStreamTrackGenerator('video');
-					console.log('Video insertable streams supported.');
-				} catch (e) {
-					console.error('Your browser does not support insertable video streams.');
-				}
-				if (typeof VideoFrame === 'undefined') {
-					console.error('Your browser does not support WebCodecs.');
 				}
 			};
 
@@ -1094,7 +1139,7 @@
 									</svg> -->
 									<div class="initials">{user.userInitials}</div>
 									<div class="name">{user.userId}</div>
-									{#if muted}
+									{#if pauseAudio}
 										<svg viewBox="0 0 24 24">
 											<path
 												fill="currentColor"
@@ -1114,28 +1159,6 @@
 						</ul>
 					</div>
 				</div>
-
-				<div id="inferenceData" class="true">
-					<div class="rb">
-						<div class="title">Inference Data</div>
-						<button type="button" class="close" on:click={closeInferenceData}>
-							<svg viewBox="0 0 352 512">
-								<path
-									d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
-								/>
-							</svg>
-						</button>
-					</div>
-					<div id="infD">
-						{#each computeData as cd}
-							<div>{cd.backend}</div>
-							<div>{cd.model}</div>
-							<div>{cd.inference}</div>
-							<div>{cd.inferenceFps}</div>
-						{/each}
-					</div>
-				</div>
-
 				<div id="conversation" class={me}>
 					<div class="rb">
 						<div class="title">Conversation</div>
@@ -1216,6 +1239,66 @@
 						</label>
 					</div>
 				</div>
+
+				{#if bb || br}
+					<div id="inferenceIndicator" class="true">
+						<div class="rb">
+							<div class="title">{modelName}</div>
+							<div />
+						</div>
+						<div class="infData">
+							<div class="indicatorG2">
+								<div>
+									<div class="mb-1">Wasm SIMD</div>
+									<div class="indicatorG2Sub">
+										<div class="note">Inference (ms)</div>
+										<div class="note">FPS</div>
+										{#each computeDataWasm as wasm}
+											<div>{wasm.inference}</div>
+											<div>{wasm.inferenceFps}</div>
+										{/each}
+									</div>
+								</div>
+								<div>
+									<div class="mb-1">WebNN</div>
+									<div class="indicatorG2Sub">
+										<div class="note">Inference (ms)</div>
+										<div class="note">FPS</div>
+										{#each computeDataWebnn as nn}
+											<div>{nn.inference}</div>
+											<div>{nn.inferenceFps}</div>
+										{/each}
+									</div>
+								</div>
+							</div>
+						</div>
+						{#if geomeanWasm}
+							<div class="geomean">
+								<div class="">
+									<div class="note">Geomean</div>
+									<div class="indicatorG2">
+										<div>
+											<div class="indicatorG2Sub">
+												<div class="note2">{geomeanWasm}</div>
+												<div class="note2">{geomeanFPSWasm}</div>
+											</div>
+										</div>
+										<div>
+											<div class="indicatorG2Sub">
+												<div class="note2">{geomeanWebnn}</div>
+												<div class="note2">{geomeanFPSWebnn}</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								{#if geomeanVs}
+									<div class="data">{geomeanVs}X</div>
+									<div class="note">WebNN vs Wasm SIMD</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</div>
 		<!-- <div>{@html error}</div> -->
