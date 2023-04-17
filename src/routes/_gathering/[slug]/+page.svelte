@@ -50,6 +50,7 @@
 	$: ul = true;
 	$: me = false;
 	$: fs = false;
+	$: medianbox = false;
 	$: millSec = '';
 	let none = 'none';
 	let pauseAudio = true,
@@ -280,7 +281,7 @@
 	};
 
 	const gridSidebar = () => {
-		if (!ul && !me && !brui) {
+		if (!ul && !me && !brui && !medianbox) {
 			gatheringView = 'g-noinfo gathering';
 		} else {
 			gatheringView = 'g gathering';
@@ -1119,10 +1120,12 @@
 
 			switchInference = async () => {
 				if (!bb && !br) {
+					medianbox = false;
 					backgroundType = 'none';
 					continueInputVideo = true;
 					await videoCanvasOnFrame();
 				} else {
+					medianbox = true;
 					if (br && bb) {
 						backgroundType = 'image';
 					} else if (bb) {
@@ -1339,7 +1342,7 @@
 				</div>
 
 				{#if bb || br}
-					<div id="inferenceIndicator" class="true">
+					<div id="inferenceIndicator" class={medianbox}>
 						<div class="rb">
 							<div class="title">{modelName}</div>
 							<div />
