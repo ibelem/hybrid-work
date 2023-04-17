@@ -216,10 +216,24 @@ const verifyMediaStreamTrack = () => {
 	}
 };
 
-const median = (arr) => {
-	const mid = Math.floor(arr.length / 2),
-		nums = [...arr].sort((a, b) => a - b);
-	return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+const median = (arr, length) => {
+	if (arr.length == 0) {
+		return;
+	}
+	const sorted = arr.sort((a, b) => a - b);
+	const middle = Math.floor(sorted.length / 2);
+
+	if (sorted.length % 2 === 0) {
+		let evenSum = 0;
+		if (length === 0) {
+			evenSum = parseInt(sorted[middle - 1]) + parseInt(sorted[middle]);
+		} else if (length === 2) {
+			evenSum = parseFloat(sorted[middle - 1]) + parseFloat(sorted[middle]);
+		}
+		return (evenSum / 2.0).toFixed(length);
+	} else {
+		return sorted[middle];
+	}
 };
 
 const geometricMean = (arr, n, length) => {

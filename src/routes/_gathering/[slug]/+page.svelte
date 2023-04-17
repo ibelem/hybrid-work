@@ -315,7 +315,7 @@
 					if (inferenceFpsData === 0) {
 						return;
 					}
-					if (computeDataWasm.length === 10) {
+					if (computeDataWasm.length === 11) {
 						computeDataWasm.shift();
 					}
 					if (inferenceFpsData != 0) {
@@ -332,15 +332,21 @@
 					});
 
 					if (computeDataArrayWasm.length > 0) {
-						medianWasm = median(computeDataArrayWasm);
+						medianWasm = median(computeDataArrayWasm, 2);
+					} else {
+						medianWasm = '';
 					}
 
 					if (computeDataFPSArrayWasm.length > 0) {
-						medianFPSWasm = median(computeDataFPSArrayWasm);
+						medianFPSWasm = median(computeDataFPSArrayWasm, 0);
+					} else {
+						medianFPSWasm = '';
 					}
 
 					if (medianWebnn && medianWasm) {
 						medianVs = (medianWasm / medianWebnn).toFixed(1);
+					} else {
+						medianVs = '';
 					}
 				}
 
@@ -348,7 +354,7 @@
 					if (inferenceFpsData === 0) {
 						return;
 					}
-					if (computeDataWebnn.length === 10) {
+					if (computeDataWebnn.length === 11) {
 						computeDataWebnn.shift();
 					}
 					if (inferenceFpsData != 0) {
@@ -365,15 +371,21 @@
 					});
 
 					if (computeDataArrayWebnn.length > 0) {
-						medianWebnn = median(computeDataArrayWebnn);
+						medianWebnn = median(computeDataArrayWebnn, 2);
+					} else {
+						medianWebnn = '';
 					}
 
 					if (computeDataFPSArrayWebnn.length > 0) {
-						medianFPSWebnn = median(computeDataFPSArrayWebnn);
+						medianFPSWebnn = median(computeDataFPSArrayWebnn, 0);
+					} else {
+						medianFPSWebnn = '';
 					}
 
 					if (medianWebnn && medianWasm) {
 						medianVs = (medianWasm / medianWebnn).toFixed(1);
+					} else {
+						medianVs = '';
 					}
 				}
 			}, 2000);
@@ -1100,6 +1112,8 @@
 				computeDataWebnn = [];
 				medianWasm = '';
 				medianWebnn = '';
+				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
+				inputOptions.inputResolution = modelConfigs[modelId].inputResolution;
 				await segmentation();
 			};
 
@@ -1462,7 +1476,7 @@
 							{vr}
 						</div>
 					</div>
-					<div class="title">Publish Resolution</div>
+					<div class="title">Video Resolution</div>
 				</div>
 				{#if bb || br}
 					<div class="inference ichild {none}">
