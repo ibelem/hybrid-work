@@ -18,6 +18,7 @@
 		exitFullscreen,
 		getVideoFrame,
 		getInputTensor,
+		median,
 		geometricMean,
 		verifyMediaStreamTrack
 	} from '../../../js/client/utils.js';
@@ -131,11 +132,11 @@
 	let computeDataFPSArrayWasm = [];
 	let computeDataArrayWebnn = [];
 	let computeDataFPSArrayWebnn = [];
-	$: geomeanWasm = '';
-	$: geomeanFPSWasm = '';
-	$: geomeanWebnn = '';
-	$: geomeanFPSWebnn = '';
-	$: geomeanVs = 0;
+	$: medianWasm = '';
+	$: medianFPSWasm = '';
+	$: medianWebnn = '';
+	$: medianFPSWebnn = '';
+	$: medianVs = 0;
 	let computeInterval;
 	$: cpArray = [];
 	let geomeanCP = 0;
@@ -331,19 +332,15 @@
 					});
 
 					if (computeDataArrayWasm.length > 0) {
-						geomeanWasm = geometricMean(computeDataArrayWasm, computeDataArrayWasm.length, 2);
+						medianWasm = median(computeDataArrayWasm);
 					}
 
 					if (computeDataFPSArrayWasm.length > 0) {
-						geomeanFPSWasm = geometricMean(
-							computeDataFPSArrayWasm,
-							computeDataFPSArrayWasm.length,
-							0
-						);
+						medianFPSWasm = median(computeDataFPSArrayWasm);
 					}
 
-					if (geomeanWebnn && geomeanWasm) {
-						geomeanVs = (geomeanWasm / geomeanWebnn).toFixed(1);
+					if (medianWebnn && medianWasm) {
+						medianVs = (medianWasm / medianWebnn).toFixed(1);
 					}
 				}
 
@@ -367,22 +364,16 @@
 						return data.inferenceFps;
 					});
 
-					console.log(computeDataArrayWebnn);
-
 					if (computeDataArrayWebnn.length > 0) {
-						geomeanWebnn = geometricMean(computeDataArrayWebnn, computeDataArrayWebnn.length, 2);
+						medianWebnn = median(computeDataArrayWebnn);
 					}
 
 					if (computeDataFPSArrayWebnn.length > 0) {
-						geomeanFPSWebnn = geometricMean(
-							computeDataFPSArrayWebnn,
-							computeDataFPSArrayWebnn.length,
-							0
-						);
+						medianFPSWebnn = median(computeDataFPSArrayWebnn);
 					}
 
-					if (geomeanWebnn && geomeanWasm) {
-						geomeanVs = (geomeanWasm / geomeanWebnn).toFixed(1);
+					if (medianWebnn && medianWasm) {
+						medianVs = (medianWasm / medianWebnn).toFixed(1);
 					}
 				}
 			}, 2000);
@@ -1107,8 +1098,8 @@
 				modelChanged = true;
 				computeDataWasm = [];
 				computeDataWebnn = [];
-				geomeanWasm = '';
-				geomeanWebnn = '';
+				medianWasm = '';
+				medianWebnn = '';
 				await segmentation();
 			};
 
@@ -1365,27 +1356,27 @@
 								</div>
 							</div>
 						</div>
-						{#if geomeanWasm || geomeanWebnn}
+						{#if medianWasm || medianWebnn}
 							<div class="geomean">
 								<div class="">
-									<div class="note">Geomean</div>
+									<div class="note">Median</div>
 									<div class="indicatorG2">
 										<div>
 											<div class="indicatorG2Sub">
-												<div class="note2">{geomeanWasm}</div>
-												<div class="note2">{geomeanFPSWasm}</div>
+												<div class="note2">{medianWasm}</div>
+												<div class="note2">{medianFPSWasm}</div>
 											</div>
 										</div>
 										<div>
 											<div class="indicatorG2Sub">
-												<div class="note2">{geomeanWebnn}</div>
-												<div class="note2">{geomeanFPSWebnn}</div>
+												<div class="note2">{medianWebnn}</div>
+												<div class="note2">{medianFPSWebnn}</div>
 											</div>
 										</div>
 									</div>
 								</div>
-								{#if geomeanVs}
-									<div class="data">{geomeanVs}X</div>
+								{#if medianVs}
+									<div class="data">{medianVs}X</div>
 									<div class="note">WebNN vs Wasm SIMD</div>
 								{/if}
 							</div>
