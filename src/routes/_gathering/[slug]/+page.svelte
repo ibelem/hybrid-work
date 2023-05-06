@@ -161,6 +161,7 @@
 	const updateVideoResolution = async () => {
 		cl('autocp: ' + autoCP);
 		if (
+			geomeanCPState === 'nominal' ||
 			geomeanCPState === 'fair' ||
 			geomeanCPState === 'serious' ||
 			geomeanCPState === 'critical'
