@@ -188,29 +188,29 @@
 			}
 		}
 
-		if (geomeanCPState === 'nominal') {
-			switch (sw) {
-				case 360:
-					resolution = resolutionSet[1];
-					break;
-				case 480:
-					resolution = resolutionSet[2];
-					break;
-				case 720:
-					resolution = resolutionSet[3];
-					break;
-				default:
-					resolution = resolutionSet[3];
-					break;
-			}
+		// if (geomeanCPState === 'nominal') {
+		// 	switch (sw) {
+		// 		case 360:
+		// 			resolution = resolutionSet[1];
+		// 			break;
+		// 		case 480:
+		// 			resolution = resolutionSet[2];
+		// 			break;
+		// 		case 720:
+		// 			resolution = resolutionSet[3];
+		// 			break;
+		// 		default:
+		// 			resolution = resolutionSet[3];
+		// 			break;
+		// 	}
 
-			if (sw !== 1280) {
-				avTrackConstraint.video.resolution = resolution;
-				outputCanvas.width = resolution.width;
-				outputCanvas.height = resolution.height;
-				await OWTStream();
-			}
-		}
+		// 	if (sw !== 1280) {
+		// 		avTrackConstraint.video.resolution = resolution;
+		// 		outputCanvas.width = resolution.width;
+		// 		outputCanvas.height = resolution.height;
+		// 		await OWTStream();
+		// 	}
+		// }
 	};
 
 	const handleCPMessage = async (event) => {
