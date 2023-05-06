@@ -161,7 +161,7 @@
 	const updateVideoResolution = async () => {
 		cl('autocp: ' + autoCP);
 		if (
-			geomeanCPState === 'nominal' ||
+			geomeanCPState === 'fair' ||
 			geomeanCPState === 'serious' ||
 			geomeanCPState === 'critical'
 		) {
@@ -187,7 +187,7 @@
 			}
 		}
 
-		if (geomeanCPState === 'fair') {
+		if (geomeanCPState === 'nominal') {
 			switch (sw) {
 				case 360:
 					resolution = resolutionSet[1];
