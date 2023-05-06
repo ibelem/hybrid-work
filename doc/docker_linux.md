@@ -18,7 +18,11 @@ If you are undering the proxy environment, please [Configure Docker to use a pro
 2. Run `$ docker images` to get the [Image ID]
 3. Start OWT Server in Docker
 
-`$ docker run -itd -p 8080:8080 -p 3000:3000 -p 3004:3004 -p 10000-11000:10000-11000 --name=owt1 [your image ID]`
+`$ docker run -itd --network=host --name=owt1 [your image ID]`
+
+or
+
+`$ docker run -itd -p 8080:8080 -p 3000:3000 -p 3300:3300 -p 3004:3004 -p 10000-11000:10000-11000 --name=owt1 [your image ID]`
 
 4. Go to bash environment in Docker
 
@@ -66,6 +70,10 @@ Check if the server running well by accessing `https://<your-server-ip>:3004` in
 $ ./bin/start-all.sh
 $ ./bin/stop-all.sh
 ```
+
+### Change Video Resolution
+
+Visit https://<IP>:3300/console/ to change video resolution when needed
 
 ### System Reboot
 
