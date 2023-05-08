@@ -15,8 +15,11 @@ If you are undering the proxy environment, please [Configure Docker to use a pro
 
 `$ docker pull openvisualcloud/xeon-ubuntu1804-service-owt`
 
-2. Run `$ docker images` to get the [Image ID]
-3. Start OWT Server in Docker
+1. Download the [Dockerfile](Dockerfile)
+2. Download patch file sdpInfo.js in https://github.com/open-webrtc-toolkit/owt-server/pull/1268/files to where [Dockerfile](Dockerfile) file locates
+3. Go to folder where Dockerfile locates and run `docker build -t openvisualcloud/xeon-ubuntu1804-service-owt .`
+4. Run `$ docker images` to get the [Image ID]
+5. Start OWT Server in Docker
 
 `$ docker run -itd --network=host --name=owt1 [your image ID]`
 
@@ -24,11 +27,11 @@ or
 
 `$ docker run -itd -p 8080:8080 -p 3000:3000 -p 3300:3300 -p 3004:3004 -p 10000-11000:10000-11000 --name=owt1 [your image ID]`
 
-4. Go to bash environment in Docker
+6. Go to bash environment in Docker
 
 `$ docker exec -it owt1 bash`
 
-5. Update some config files
+7. Update some config files
 
 ```
 $ cd owt
@@ -40,7 +43,7 @@ $ apt update && apt install vim
 
 `$ vim webrtc_agent/agent.toml`, update `maxport`, `minport` to `11000` and `10000`
 
-6. Init OWT Service
+8. Init OWT Service
 
 ```
 $ cd ..
@@ -73,7 +76,7 @@ $ ./bin/stop-all.sh
 
 ### Change Video Resolution
 
-Visit https://<IP>:3300/console/ to change video resolution when needed
+Visit `https://<your-server-ip>:3300/console/` to change video resolution when needed
 
 ### System Reboot
 
