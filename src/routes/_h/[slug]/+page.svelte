@@ -1,6 +1,7 @@
 <script>
 	import { browser } from '$app/environment';
 	import { beforeNavigate } from '$app/navigation';
+	import { buildWebGL2Pipeline } from '../../../js/client/webgl2/webgl2Pipeline.js';
 	import Header from '../../../lib/Header.svelte';
 	import Control from '../../../lib/Control.svelte';
 	import Meter from '../../../lib/Meter.svelte';
@@ -9,13 +10,24 @@
 	/** @type {import('./$types').PageData} */
 	import {
 		initials,
+		getTimeMillisec,
 		cl,
 		videoObject,
 		getDateTime,
 		fullscreen,
-		exitFullscreen
+		exitFullscreen,
+		getVideoFrame,
+		getInputTensor,
+		median,
+		geometricMean,
+		verifyMediaStreamTrack
 	} from '../../../js/client/utils.js';
-	import { bgList } from '../../../js/client/resource.js';
+	import {
+		bgList,
+		inputOptions,
+		modelConfigs,
+		resolutionSet
+	} from '../../../js/client/resource.js';
 	import {
 		send,
 		generateUrl,
@@ -31,26 +43,32 @@
 
 	let hideError = true;
 
-	let camera, inputVideo, outputCanvas, videos, ctx;
-	let cW, cH;
+	let inputVideo, outputCanvas, videos;
 	$: br = false;
 	$: brui = false;
 	$: bb = false;
 	$: ul = true;
 	$: me = false;
 	$: fs = false;
+	$: medianbox = false;
+	$: millSec = '';
 	let none = 'none';
 	let pauseAudio = true,
 		pauseVideoMsg = '';
 	let pauseVideo = false;
 	let audioOnly = false;
-	let beauty = false;
 
 	let backgroundImage, bgInput;
-	let gatheringContainer, gatheringVideos, gatheringInfo, controlPanel;
+	let gatheringVideos, gatheringInfo;
 	let gatheringView = 'g gathering';
 	let column;
-	let resolution = { width: 1280, height: 720 };
+
+	let resolution = resolutionSet[3];
+	$: sw = resolution.width;
+	$: sh = resolution.height;
+	$: vr = resolution.name;
+	$: vrdata = sw + 'x' + sh;
+
 	let avTrackConstraint = {
 		audio: {
 			source: 'mic'
@@ -61,6 +79,7 @@
 			source: 'camera'
 		}
 	};
+	let backgroundType = 'none';
 
 	let room = null,
 		pc,
@@ -80,7 +99,6 @@
 		participantId;
 	let msg = '',
 		msgs = [];
-	let muted = false;
 	let stream, processedStream, localStream;
 	let videoList = [];
 	let subList = {};
@@ -90,6 +108,146 @@
 	let screenSharing = false;
 	let remoteScreen = null;
 	let remoteScreenName = null;
+
+	// An AbortController used to stop the transform.
+	let abortController = null;
+	let models = 1,
+		isFirstTimeLoad = true,
+		modelChanged = false,
+		enableWebnnDelegate = false,
+		changeBackend,
+		changeModel;
+	let modelId = 0,
+		modelName = '',
+		modelConfig = '';
+	let switchInference;
+	let loadTime = '';
+	let outputBuffer;
+	let interval;
+	let continueInputVideo = true;
+	let segmentation, segmentSemantic, renderCamStream;
+
+	$: computeDataWasm = [];
+	$: computeDataWebnn = [];
+	let computeDataArrayWasm = [];
+	let computeDataFPSArrayWasm = [];
+	let computeDataArrayWebnn = [];
+	let computeDataFPSArrayWebnn = [];
+	$: medianWasm = '';
+	$: medianFPSWasm = '';
+	$: medianWebnn = '';
+	$: medianFPSWebnn = '';
+	$: medianVs = 0;
+	let computeInterval;
+	$: cpArray = [];
+	let geomeanCP = 0;
+	let geomeanCPState = '';
+	let autoCP = false;
+
+	const changeCP = async () => {
+		autoCP = !autoCP;
+		cl('autocp: ' + autoCP);
+		if (autoCP === false) {
+			if (sw !== 1280) {
+				resolution = resolutionSet[3];
+				avTrackConstraint.video.resolution = resolution;
+				outputCanvas.width = resolution.width;
+				outputCanvas.height = resolution.height;
+				await OWTStream();
+			}
+		}
+	};
+
+	const updateVideoResolution = async () => {
+		cl('autocp: ' + autoCP);
+		if (
+			geomeanCPState === 'nominal' ||
+			geomeanCPState === 'fair' ||
+			geomeanCPState === 'serious' ||
+			geomeanCPState === 'critical'
+		) {
+			switch (sw) {
+				case 1280:
+					resolution = resolutionSet[2];
+					break;
+				case 720:
+					resolution = resolutionSet[1];
+					break;
+				case 480:
+					resolution = resolutionSet[0];
+					break;
+				default:
+					resolution = resolutionSet[0];
+					break;
+			}
+			if (sw !== 360) {
+				avTrackConstraint.video.resolution = resolution;
+				outputCanvas.width = resolution.width;
+				outputCanvas.height = resolution.height;
+				await OWTStream();
+			}
+		}
+
+		// if (geomeanCPState === 'nominal') {
+		// 	switch (sw) {
+		// 		case 360:
+		// 			resolution = resolutionSet[1];
+		// 			break;
+		// 		case 480:
+		// 			resolution = resolutionSet[2];
+		// 			break;
+		// 		case 720:
+		// 			resolution = resolutionSet[3];
+		// 			break;
+		// 		default:
+		// 			resolution = resolutionSet[3];
+		// 			break;
+		// 	}
+
+		// 	if (sw !== 1280) {
+		// 		avTrackConstraint.video.resolution = resolution;
+		// 		outputCanvas.width = resolution.width;
+		// 		outputCanvas.height = resolution.height;
+		// 		await OWTStream();
+		// 	}
+		// }
+	};
+
+	const handleCPMessage = async (event) => {
+		let msg = event.detail.msg;
+		if (msg) {
+			if (cpArray.length >= 12) {
+				cpArray.shift();
+			}
+			cpArray.push(msg * 1000);
+			cpArray = cpArray;
+			geomeanCP = geometricMean(cpArray, cpArray.length, 0);
+
+			if (geomeanCP < 250) {
+				geomeanCPState = 'nominal';
+			} else if (250 <= geomeanCP && geomeanCP < 500) {
+				geomeanCPState = 'fair';
+			} else if (500 <= geomeanCP && geomeanCP < 750) {
+				geomeanCPState = 'serious';
+			} else if (geomeanCP >= 750) {
+				geomeanCPState = 'critical';
+			}
+
+			if (autoCP) {
+				await updateVideoResolution();
+			}
+		}
+	};
+
+	const millSecInFullscreen = () => {
+		if (fs) {
+			interval = setInterval(() => {
+				millSec = getTimeMillisec();
+			}, 60);
+		} else {
+			clearInterval(interval);
+		}
+	};
 
 	const removeFullClass = () => {
 		gatheringVideos.childNodes.forEach((c) => {
@@ -105,6 +263,7 @@
 			canvasOrVideo.classList.add('full');
 		}
 		fs = fullscreen();
+		millSecInFullscreen();
 	};
 
 	const switchFs = (e) => {
@@ -113,10 +272,6 @@
 			removeFullClass();
 			canvasOrVideo.classList.add('full');
 		}
-	};
-
-	const toggleBeauty = () => {
-		beauty = !beauty;
 	};
 
 	const updateBackgroundImage = (e) => {
@@ -131,7 +286,7 @@
 	};
 
 	const gridSidebar = () => {
-		if (!ul && !me && !brui) {
+		if (!ul && !me && !brui && !medianbox) {
 			gatheringView = 'g-noinfo gathering';
 		} else {
 			gatheringView = 'g gathering';
@@ -154,6 +309,97 @@
 		gridSidebar();
 	};
 
+	const showInferenceIndicator = () => {
+		if (br || bb) {
+			computeInterval = setInterval(() => {
+				let inf = {
+					inference: inferenceData,
+					inferenceFps: inferenceFpsData
+				};
+
+				if (!enableWebnnDelegate) {
+					if (inferenceFpsData === 0) {
+						return;
+					}
+					if (computeDataWasm.length === 11) {
+						computeDataWasm.shift();
+					}
+					if (inferenceFpsData != 0) {
+						computeDataWasm.push(inf);
+					}
+					computeDataWasm = computeDataWasm;
+
+					computeDataArrayWasm = computeDataWasm.map((data) => {
+						return data.inference;
+					});
+
+					computeDataFPSArrayWasm = computeDataWasm.map((data) => {
+						return data.inferenceFps;
+					});
+
+					if (computeDataArrayWasm.length > 0) {
+						medianWasm = median(computeDataArrayWasm, 2);
+					} else {
+						medianWasm = '';
+					}
+
+					if (computeDataFPSArrayWasm.length > 0) {
+						medianFPSWasm = median(computeDataFPSArrayWasm, 0);
+					} else {
+						medianFPSWasm = '';
+					}
+
+					if (medianWebnn && medianWasm) {
+						medianVs = (medianWasm / medianWebnn).toFixed(1);
+					} else {
+						medianVs = '';
+					}
+				}
+
+				if (enableWebnnDelegate) {
+					if (inferenceFpsData === 0) {
+						return;
+					}
+					if (computeDataWebnn.length === 11) {
+						computeDataWebnn.shift();
+					}
+					if (inferenceFpsData != 0) {
+						computeDataWebnn.push(inf);
+					}
+					computeDataWebnn = computeDataWebnn;
+
+					computeDataArrayWebnn = computeDataWebnn.map((data) => {
+						return data.inference;
+					});
+
+					computeDataFPSArrayWebnn = computeDataWebnn.map((data) => {
+						return data.inferenceFps;
+					});
+
+					if (computeDataArrayWebnn.length > 0) {
+						medianWebnn = median(computeDataArrayWebnn, 2);
+					} else {
+						medianWebnn = '';
+					}
+
+					if (computeDataFPSArrayWebnn.length > 0) {
+						medianFPSWebnn = median(computeDataFPSArrayWebnn, 0);
+					} else {
+						medianFPSWebnn = '';
+					}
+
+					if (medianWebnn && medianWasm) {
+						medianVs = (medianWasm / medianWebnn).toFixed(1);
+					} else {
+						medianVs = '';
+					}
+				}
+			}, 2000);
+		} else {
+			clearInterval(computeInterval);
+		}
+	};
+
 	// Face.solve(facelandmarkArray, {
 	// 	runtime: 'tfjs', // `mediapipe` or `tfjs`
 	// 	video: video,
@@ -161,18 +407,6 @@
 	// 	smoothBlink: false, // smooth left and right eye blink delays
 	// 	blinkSettings: [0.25, 0.75] // adjust upper and lower bound blink sensitivity
 	// });
-
-	// const createOWTStream = async () => {
-	// 	stream = await Owt.Base.MediaStreamFactory.createMediaStream(avTrackConstraint);
-	// 	if ('srcObject' in inputVideo) {
-	// 		inputVideo.srcObject = stream;
-	// 	} else {
-	// 		inputVideo.src = URL.createObjectURL(stream);
-	// 	}
-
-	// 	inputVideo.autoplay = true;
-	// 	cl(inputVideo.srcObject);
-	// };
 
 	const updateGrid = () => {
 		let t = videoList.length + 1;
@@ -378,8 +612,8 @@
 
 	const getProcessedStream = () => {
 		processedStream = outputCanvas.captureStream();
-		//   const audiotrack = stream.getAudioTracks()[0];
-		//   processedStream.addTrack(audiotrack);
+		const audiotrack = stream.getAudioTracks()[0];
+		processedStream.addTrack(audiotrack);
 	};
 
 	let createLocal = async () => {
@@ -394,8 +628,6 @@
 		cl('room.peerConnection');
 		cl(pc);
 		cl(processedStream);
-
-		cl('4444');
 
 		// videotransceiver = pc.addTransceiver(processedStream.getVideoTracks()[0], {
 		// 	direction: 'sendonly',
@@ -417,8 +649,8 @@
 		let publication = await room.publish(localStream);
 		localPublication = publication;
 
-		// pauseAudio = false;
-		// toggleAudio();
+		pauseAudio = false;
+		toggleAudio();
 		// pauseVideo = true;
 		// toggleVideo();
 
@@ -434,8 +666,6 @@
 		cl('== addRoomEventListener ==');
 		room.addEventListener('streamadded', (streamEvent) => {
 			let stream = streamEvent.stream;
-			cl(stream);
-
 			if (localStream && localStream.id === stream.id) {
 				return;
 			} else {
@@ -571,8 +801,6 @@
 		});
 	};
 
-	// createOWTStream();
-
 	const shareScreen = () => {
 		let width = resolution.width,
 			height = resolution.height;
@@ -638,6 +866,12 @@
 		}
 	};
 
+	// Abort Transform
+	const abortTransform = () => {
+		abortController.abort();
+		abortController = null;
+	};
+
 	const exitGathering = () => {
 		deleteUser(participantId);
 		stopStream();
@@ -666,8 +900,12 @@
 			case 'tv':
 				toggleVideo();
 				break;
+			case 'au':
+				toggleAudio();
+				break;
 			case 'layout':
 				brUi();
+				switchInference();
 				break;
 			case 'exit':
 				exitGathering();
@@ -679,9 +917,23 @@
 				removeFullClass();
 				exitFullscreen();
 				fs = false;
+				millSecInFullscreen();
 				break;
 			default:
 				break;
+		}
+	};
+
+	const OWTStream = async () => {
+		stream = await Owt.Base.MediaStreamFactory.createMediaStream(avTrackConstraint);
+		if (inputVideo) {
+			if ('srcObject' in inputVideo) {
+				inputVideo.srcObject = stream;
+			} else {
+				inputVideo.src = URL.createObjectURL(stream);
+			}
+
+			inputVideo.autoplay = true;
 		}
 	};
 
@@ -696,102 +948,213 @@
 		if (browser) {
 			updateGrid();
 			localname = decodeURI(
-				new URL(window.location).pathname.toLocaleLowerCase().replace('/_gathering/', '')
+				new URL(window.location).pathname.toLocaleLowerCase().replace('/_h/', '')
 			);
 
-			const selfieSegmentation = new SelfieSegmentation({
-				locateFile: (file) => {
-					cl(file);
-					cl(`../models/selfie_segmentation/${file}`);
-					return `../models/selfie_segmentation/${file}`;
+			const worker = new Worker('../js/tfjs/builtin_delegate_worker.js');
+
+			async function postAndListenMessage(postedMessage) {
+				if (postedMessage.action == 'compute') {
+					// Transfer buffer rather than copy
+					worker.postMessage(postedMessage, [postedMessage.buffer.buffer]);
+				} else {
+					worker.postMessage(postedMessage);
 				}
-			});
 
-			selfieSegmentation.setOptions({
-				modelSelection: 0
-			});
-
-			const mediaPipeStream = () => {
-				camera = new Camera(inputVideo, {
-					onFrame: async () => {
-						await selfieSegmentation.send({ image: inputVideo });
-					},
-					onSourceChanged: async () => {
-						await selfieSegmentation.reset();
-					},
-					width: resolution.width,
-					height: resolution.height
+				const result = await new Promise((resolve) => {
+					worker.onmessage = (event) => {
+						resolve(event.data);
+					};
 				});
+				return result;
+			}
+
+			const postProcessingConfig = {
+				smoothSegmentationMask: true,
+				jointBilateralFilter: { sigmaSpace: 1, sigmaColor: 0.1 },
+				coverage: [0.5, 0.75],
+				lightWrapping: 0.3,
+				blendMode: 'screen'
 			};
 
-			const onBRResults = (results) => {
-				cW = outputCanvas.width;
-				cH = outputCanvas.height;
-				// if (pauseVideo) {
-				// 	ctx.drawImage(backgroundPause, 0, 0, cW, cH);
-				// } else {
-				if (!bb && !br) {
-					ctx.drawImage(results.image, 0, 0, cW, cH);
-					if (beauty) {
-						ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(1px)';
-					} else {
-						ctx.filter = 'saturate(100%) brightness(100%) contrast(100%) blur(0px)';
+			outputCanvas.width = resolution.width;
+			outputCanvas.height = resolution.height;
+
+			const drawOutput = async (outputBuffer, srcElement) => {
+				if (modelName.toLowerCase().startsWith('deeplab') && outputBuffer) {
+					// Do additional `argMax` for DeepLabV3 model
+					outputBuffer = tf.tidy(() => {
+						const a = tf.tensor(outputBuffer, [1, 257, 257, 21], 'float32');
+						const b = tf.argMax(a, 3);
+						const c = tf.tensor(b.dataSync(), b.shape, 'float32');
+						return c.dataSync();
+					});
+				}
+
+				const pipeline = buildWebGL2Pipeline(
+					srcElement,
+					backgroundImage,
+					backgroundType,
+					inputOptions.inputResolution,
+					outputCanvas,
+					outputBuffer
+				);
+
+				pipeline.updatePostProcessingConfig(postProcessingConfig);
+				await pipeline.render();
+			};
+
+			const pipeline2 = buildWebGL2Pipeline(
+				inputVideo,
+				backgroundImage,
+				'none',
+				[321, 321],
+				outputCanvas,
+				null
+			);
+
+			pipeline2.updatePostProcessingConfig(postProcessingConfig);
+
+			let req;
+			const videoCanvasOnFrame = async () => {
+				if (continueInputVideo) {
+					req = requestAnimationFrame(videoCanvasOnFrame);
+					// ctx2d.drawImage(inputvideo, 0, 0, cW, cH);
+					if (stream) {
+						await pipeline2.render();
 					}
 				} else {
-					end = performance.now();
-					if (start) {
-						delta = end - start;
-						inferenceData = delta.toFixed(1);
-						inferenceFpsData = (1000.0 / delta.toFixed(1)).toFixed(0);
-					}
-
-					fpsControl.tick();
-
-					ctx.save();
-					ctx.clearRect(0, 0, cW, cH);
-					ctx.drawImage(results.segmentationMask, 0, 0, cW, cH);
-
-					// Only overwrite existing pixels.
-					ctx.globalCompositeOperation = 'source-in';
-
-					if (beauty) {
-						ctx.filter = 'saturate(105%) brightness(120%) contrast(110%) blur(0px)';
-					}
-
-					ctx.drawImage(results.image, 0, 0, cW, cH);
-					ctx.globalCompositeOperation = 'destination-atop';
-
-					if (bb && br) {
-						ctx.filter = 'blur(10px)';
-						ctx.drawImage(backgroundImage, 0, 0, cW, cH);
-					} else if (bb) {
-						ctx.filter = 'blur(10px)';
-						ctx.drawImage(results.image, 0, 0, cW, cH);
-					} else if (br) {
-						ctx.filter = 'blur(0px)';
-						ctx.drawImage(backgroundImage, 0, 0, cW, cH);
-					}
-					ctx.restore();
-					start = performance.now();
+					cancelAnimationFrame(req);
 				}
-				// }
 			};
 
-			selfieSegmentation.onResults(onBRResults);
+			segmentSemantic = () => {
+				return async (videoFrame, controller) => {
+					if (bb || br) {
+						const inputBuffer = getInputTensor(videoFrame, inputOptions);
+						const start = performance.now();
+						const result = await postAndListenMessage({ action: 'compute', buffer: inputBuffer });
+						if (result !== 'null') {
+							inferenceData = (performance.now() - start).toFixed(2);
+							outputBuffer = result.outputBuffer;
+							await drawOutput(outputBuffer, videoFrame);
+							inferenceFpsData = (1000 / inferenceData).toFixed(0);
+						}
+					}
+					const frame_from_canvas = new VideoFrame(outputCanvas, { timestamp: 0 });
+					videoFrame.close();
+					controller.enqueue(frame_from_canvas);
+				};
+			};
 
-			const controls = window;
-			const fpsControl = new controls.FPS();
-			new controls.ControlPanel(controlPanel).add([fpsControl]);
+			renderCamStream = async () => {
+				const videoTrack = stream.getVideoTracks()[0];
+				const processor = new MediaStreamTrackProcessor({ track: videoTrack });
+				const generator = new MediaStreamTrackGenerator({ kind: 'video' });
 
-			const initMediaPipe = async () => {
-				mediaPipeStream();
-				ctx = outputCanvas.getContext('2d');
-				await camera.start();
+				const source = processor.readable;
+				const sink = generator.writable;
+
+				const transformer = new TransformStream({ transform: segmentSemantic() });
+
+				abortController = new AbortController();
+				const signal = abortController.signal;
+
+				const popeThroughPromise = source.pipeThrough(transformer, { signal }).pipeTo(sink);
+
+				popeThroughPromise.catch((e) => {
+					if (signal.aborted) {
+						console.log('Shutting down streams after abort.');
+					} else {
+						console.error('Error from stream transform:', e);
+					}
+					source.cancel(e);
+					sink.abort(e);
+				});
+
+				processedStream.addTrack(generator);
+
+				setTimeout(showInferenceIndicator, 5000);
+			};
+
+			segmentation = async () => {
+				if (modelName != '') abortTransform();
+				modelName = modelConfigs[modelId].name;
+				modelConfig = modelConfigs[modelId].inputDimensions.toString().replaceAll(',', 'x');
+				if (isFirstTimeLoad || modelChanged) {
+					isFirstTimeLoad = false;
+					modelChanged = false;
+					const options = {
+						action: 'load',
+						modelPath: modelConfigs[modelId].modelPath,
+						enableWebNNDelegate: enableWebnnDelegate,
+						webNNDevicePreference: 0
+					};
+					let lt = await postAndListenMessage(options);
+					if (typeof lt === 'string') {
+						loadTime = `in ${lt} ms`;
+					} else {
+						loadTime = '';
+					}
+				}
+
+				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
+				inputOptions.inputResolution = modelConfigs[modelId].inputResolution;
+				continueInputVideo = false;
+				await renderCamStream();
+			};
+
+			changeBackend = async () => {
+				enableWebnnDelegate = !enableWebnnDelegate;
+				modelChanged = true;
+				await segmentation();
+			};
+
+			changeModel = async (event) => {
+				models = event.currentTarget.value;
+				modelId = models - 1;
+				modelChanged = true;
+				computeDataWasm = [];
+				computeDataWebnn = [];
+				medianWasm = '';
+				medianWebnn = '';
+				inputOptions.inputDimensions = modelConfigs[modelId].inputDimensions;
+				inputOptions.inputResolution = modelConfigs[modelId].inputResolution;
+				await segmentation();
+			};
+
+			switchInference = async () => {
+				if (!bb && !br) {
+					medianbox = false;
+					backgroundType = 'none';
+					continueInputVideo = true;
+					await videoCanvasOnFrame();
+				} else {
+					medianbox = true;
+					if (br && bb) {
+						backgroundType = 'image';
+					} else if (bb) {
+						backgroundType = 'blur';
+					} else if (br) {
+						backgroundType = 'image';
+					}
+					await segmentation();
+					continueInputVideo = false;
+				}
+			};
+
+			const init = async () => {
+				verifyMediaStreamTrack();
+				await OWTStream();
 				getProcessedStream();
 				initConference();
+				backgroundType = 'none';
+				await videoCanvasOnFrame();
+				await tf.setBackend('wasm');
+				await tf.ready();
 			};
 
-			initMediaPipe();
+			init();
 		}
 	});
 </script>
@@ -882,7 +1245,7 @@
 									</svg> -->
 									<div class="initials">{user.userInitials}</div>
 									<div class="name">{user.userId}</div>
-									{#if muted}
+									{#if pauseAudio}
 										<svg viewBox="0 0 24 24">
 											<path
 												fill="currentColor"
@@ -902,7 +1265,6 @@
 						</ul>
 					</div>
 				</div>
-
 				<div id="conversation" class={me}>
 					<div class="rb">
 						<div class="title">Conversation</div>
@@ -959,7 +1321,7 @@
 					</div>
 					<img
 						bind:this={backgroundImage}
-						src="../img/ssbg/01.jpg"
+						src="../img/ssbg/00.jpg"
 						style="display:none"
 						alt="background"
 					/>
@@ -983,11 +1345,68 @@
 						</label>
 					</div>
 				</div>
+
+				{#if bb || br}
+					<div id="inferenceIndicator" class={medianbox}>
+						<div class="rb">
+							<div class="title">{modelName}</div>
+							<div />
+						</div>
+						<div class="infData">
+							<div class="indicatorG2">
+								<div>
+									<div class="mb-1">Wasm SIMD</div>
+									<div class="indicatorG2Sub">
+										<div class="note">Inference (ms)</div>
+										<div class="note">FPS</div>
+										{#each computeDataWasm as wasm}
+											<div>{wasm.inference}</div>
+											<div>{wasm.inferenceFps}</div>
+										{/each}
+									</div>
+								</div>
+								<div>
+									<div class="mb-1">WebNN</div>
+									<div class="indicatorG2Sub">
+										<div class="note">Inference (ms)</div>
+										<div class="note">FPS</div>
+										{#each computeDataWebnn as nn}
+											<div>{nn.inference}</div>
+											<div>{nn.inferenceFps}</div>
+										{/each}
+									</div>
+								</div>
+							</div>
+						</div>
+						{#if medianWasm || medianWebnn}
+							<div class="geomean">
+								<div class="">
+									<div class="note">Median</div>
+									<div class="indicatorG2">
+										<div>
+											<div class="indicatorG2Sub">
+												<div class="note2">{medianWasm}</div>
+												<div class="note2">{medianFPSWasm}</div>
+											</div>
+										</div>
+										<div>
+											<div class="indicatorG2Sub">
+												<div class="note2">{medianWebnn}</div>
+												<div class="note2">{medianFPSWebnn}</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								{#if medianVs}
+									<div class="data">{medianVs}X</div>
+									<div class="note">WebNN vs Wasm SIMD</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</div>
-
-		<!-- <button id="beauty" type="button" on:click={toggleBeauty}>Beauty</button> -->
-
 		<!-- <div>{@html error}</div> -->
 
 		<div class="certmsg {hideError}">
@@ -997,8 +1416,8 @@
 
 			<ol>
 				<li>
-					Visit
-					<a href="https://10.239.115.52:8080/socket.io/?EIO=3&transport=polling">the test page</a>
+					Visit https://&lt;url value in config.json, port is :8080 instead of
+					:3000&gt;/socket.io/?EIO=3&transport=polling
 				</li>
 				<li>
 					"Your connection is not private" -&gt; Click "Advanced" button -&gt; Click "Proceed to
@@ -1010,33 +1429,151 @@
 	</div>
 	<footer>
 		<div class="indicatorContainer">
+			<!-- {#if geomeanCP}<div class="cpdata">{cpArray} | {geomeanCP} - {geomeanCPState}</div>{/if} -->
 			<div class="indicator">
-				<Meter />
-				<div class="inference ichild {none}">
+				<Meter on:message={handleCPMessage} />
+				{#if geomeanCP}
+					<div class="computepressure ichild">
+						<div class="first {geomeanCPState}">
+							{#if geomeanCPState === 'nominal'}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="48"
+									viewBox="0 96 960 960"
+									width="48"
+									><path
+										d="M626 523q22.5 0 38.25-15.75T680 469q0-22.5-15.75-38.25T626 415q-22.5 0-38.25 15.75T572 469q0 22.5 15.75 38.25T626 523Zm-292 0q22.5 0 38.25-15.75T388 469q0-22.5-15.75-38.25T334 415q-22.5 0-38.25 15.75T280 469q0 22.5 15.75 38.25T334 523Zm146 272q66 0 121.5-35.5T682 663h-52q-23 40-63 61.5T480.5 746q-46.5 0-87-21T331 663h-53q26 61 81 96.5T480 795Zm0 181q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142.375 0 241.188-98.812Q820 718.375 820 576t-98.812-241.188Q622.375 236 480 236t-241.188 98.812Q140 433.625 140 576t98.812 241.188Q337.625 916 480 916Z"
+									/></svg
+								>{/if}
+							{#if geomeanCPState === 'fair'}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="48"
+									viewBox="0 96 960 960"
+									width="48"
+									><path
+										d="M626 523q22.5 0 38.25-15.75T680 469q0-22.5-15.75-38.25T626 415q-22.5 0-38.25 15.75T572 469q0 22.5 15.75 38.25T626 523Zm-292 0q22.5 0 38.25-15.75T388 469q0-22.5-15.75-38.25T334 415q-22.5 0-38.25 15.75T280 469q0 22.5 15.75 38.25T334 523Zm20 194h253v-49H354v49Zm126 259q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142.375 0 241.188-98.812Q820 718.375 820 576t-98.812-241.188Q622.375 236 480 236t-241.188 98.812Q140 433.625 140 576t98.812 241.188Q337.625 916 480 916Z"
+									/></svg
+								>{/if}
+							{#if geomeanCPState === 'serious'}
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="48"
+									viewBox="0 96 960 960"
+									width="48"
+									><path
+										d="M626 523q22.5 0 38.25-15.75T680 469q0-22.5-15.75-38.25T626 415q-22.5 0-38.25 15.75T572 469q0 22.5 15.75 38.25T626 523Zm-292 0q22.5 0 38.25-15.75T388 469q0-22.5-15.75-38.25T334 415q-22.5 0-38.25 15.75T280 469q0 22.5 15.75 38.25T334 523Zm146.174 116Q413 639 358.5 676.5T278 776h53q22-42 62.173-65t87.5-23Q528 688 567.5 711.5T630 776h52q-25-63-79.826-100-54.826-37-122-37ZM480 976q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142.375 0 241.188-98.812Q820 718.375 820 576t-98.812-241.188Q622.375 236 480 236t-241.188 98.812Q140 433.625 140 576t98.812 241.188Q337.625 916 480 916Z"
+									/></svg
+								>{/if}
+							{#if geomeanCPState === 'critical'}
+								<svg height="48" viewBox="0 96 960 960" width="48"
+									><path
+										d="M480 639q-67 0-121.5 37.5T278 776h404q-25-63-80-100t-122-37Zm-183-72 50-45 45 45 31-36-45-45 45-45-31-36-45 45-50-45-31 36 45 45-45 45 31 36Zm272 0 44-45 51 45 31-36-45-45 45-45-31-36-51 45-44-45-31 36 44 45-44 45 31 36Zm-89 409q-83 0-156-31.5T197 859q-54-54-85.5-127T80 576q0-83 31.5-156T197 293q54-54 127-85.5T480 176q83 0 156 31.5T763 293q54 54 85.5 127T880 576q0 83-31.5 156T763 859q-54 54-127 85.5T480 976Zm0-400Zm0 340q142 0 241-99t99-241q0-142-99-241t-241-99q-142 0-241 99t-99 241q0 142 99 241t241 99Z"
+									/></svg
+								>{/if}
+							{geomeanCPState}
+						</div>
+						<div class="title">Geomean of CP in 1 Min</div>
+					</div>
+				{/if}
+
+				<div class="inference ichild">
 					<div class="time first">
-						<div bind:this={inference} id="inferencetime">{inferenceData}</div>
-						<div class="unit">ms</div>
+						<div class="if">{vrdata}</div>
+						<div class="unit">
+							{vr}
+						</div>
 					</div>
-					<div class="title">Inference Time</div>
+					<div class="title">Video Resolution</div>
 				</div>
-				<div class="inferencefps ichild {none}">
-					<div class="fps first">
-						<div id="fps" class="fpsdata">0</div>
-						<div class="unit">fps</div>
+				{#if bb || br}
+					<div class="inference ichild {none}">
+						<div class="time first">
+							<div bind:this={inference} id="inferencetime" class="if">
+								{inferenceData}
+							</div>
+							<div class="unit">ms</div>
+						</div>
+						<div class="title">Inference Time</div>
 					</div>
-					<div class="title">Inference FPS</div>
-				</div>
-				<div class="inferencefps ichild {none}">
-					<div class="fps first">
-						<div class="fpsdata">{inferenceFpsData}</div>
-						<div class="unit">fps</div>
+					<div class="inference ichild {none}">
+						<div class="fps first">
+							<div class="if">{inferenceFpsData}</div>
+							<div class="unit">fps</div>
+						</div>
+						<div class="title">Inference FPS</div>
 					</div>
-					<div class="title">Inference FPS</div>
+				{/if}
+			</div>
+			<div class="subinfo">
+				<div>
+					<span class="divider" />
+					<span class="content milsec">
+						{#if fs}
+							{millSec}{/if}
+					</span>
 				</div>
+				<div>
+					<input
+						class="cp tgl tgl-flip"
+						id="cpAuto"
+						on:click={changeCP}
+						bind:checked={autoCP}
+						type="checkbox"
+					/>
+					<label class="tgl-btn" data-tg-off="Auto CP Off" data-tg-on="Auto CP On" for="cpAuto" />
+				</div>
+				{#if bb || br}
+					<div>
+						<span class="content">Loaded {loadTime}</span>
+					</div>
+					<div>
+						<span class="divider" />
+						<span class="content">{modelConfig}</span>
+					</div>
+
+					<div class="model m_{models}">
+						<label>
+							<input
+								checked={models === 1}
+								on:change={changeModel}
+								type="radio"
+								name="amount"
+								value="1"
+							/> Selfie Segmentation
+						</label>
+						<label>
+							<input
+								checked={models === 2}
+								on:change={changeModel}
+								type="radio"
+								name="amount"
+								value="2"
+							/> Selfie Segmentation Landscape
+						</label>
+						<label>
+							<input
+								checked={models === 3}
+								on:change={changeModel}
+								type="radio"
+								name="amount"
+								value="3"
+							/> DeepLab
+						</label>
+					</div>
+					<div>
+						<input
+							class="tgl tgl-flip"
+							id="backend"
+							on:click={changeBackend}
+							bind:checked={enableWebnnDelegate}
+							type="checkbox"
+						/>
+						<label class="tgl-btn" data-tg-off="Wasm" data-tg-on="WebNN" for="backend" />
+					</div>
+				{/if}
 			</div>
 		</div>
-
-		<div bind:this={controlPanel} style="display: none" />
 		<Control bind:ul bind:me bind:bb bind:br bind:none on:message={handleMessage} />
 	</footer>
 </div>

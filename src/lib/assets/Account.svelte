@@ -4,7 +4,7 @@
 	let path, classname;
 	onMount(() => {
 		if (browser) {
-			path = new URL(window.location).pathname.indexOf('/_gathering/');
+			path = new URL(window.location).pathname.indexOf('/_h/');
 		}
 
 		path > -1 ? (classname = 'white') : (classname = 'normal');

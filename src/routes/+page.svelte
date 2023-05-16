@@ -6,9 +6,9 @@
 	let nickname;
 	let join = () => {
 		if (nickname) {
-			location.href = `../_gathering/${nickname}`;
+			location.href = `../_h/${nickname}`;
 		} else {
-			location.href = `../_gathering/Anonymous`;
+			location.href = `../_h/Anonymous`;
 		}
 	};
 	onMount(() => {
@@ -26,9 +26,9 @@
 	<Header />
 	<main class="container">
 		<div class="intro">
-			<h2>Gathering with Others</h2>
+			<h2>Hybrid Work</h2>
 			<div class="desc">
-				Connect, collaborate, and manage your work and life on the Web, powered by emerging Web APIs
+				Connect, collaborate, and manage your work on the Web, powered by emerging Web APIs
 				including Compute Pressure API and WebNN API.
 			</div>
 			<form on:submit|preventDefault={() => join} class="input-group">
@@ -64,7 +64,7 @@
 			</form>
 		</div>
 		<div class="right">
-			<img src={bannerImage} alt="gathering with others" />
+			<img src={bannerImage} alt="Hybrid Work" />
 		</div>
 	</main>
 </div>

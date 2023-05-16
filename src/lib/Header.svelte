@@ -13,7 +13,7 @@
 				day = getDay();
 				time = getTime();
 			}, 60);
-			path = new URL(window.location).pathname.indexOf('/_gathering/');
+			path = new URL(window.location).pathname.indexOf('/_h/');
 		}
 		if (!nickname) {
 			nickname = '';

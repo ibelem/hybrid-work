@@ -1,6 +1,6 @@
-# Gathering with Others on the Web
+# Hybrid Work on the Web
 
-Gathering with Others​ to connect, share, collaborate, and manage your work and life on the Web.
+Hybrid Work​ to connect, share, collaborate, and manage your work on the Web.
 
 ## Emerging Web APIs Support
 
